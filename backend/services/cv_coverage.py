@@ -49,13 +49,101 @@ def estimate_lot_coverage(
     )
 
     # --- Step 3: Mask the image to just the parcel area ---
-    # Everything outside the parcel becomes black -> won't be segmented
     masked_image = cv2.bitwise_and(image, image, mask=parcel_mask)
 
-    # --- Step 4: Segment building footprint (only inside parcel) ---
-    building_mask = _segment_building_footprint(masked_image)
-    # Intersect with parcel mask to be safe
-    building_mask = cv2.bitwise_and(building_mask, building_mask, mask=parcel_mask)
+    # --- Step 3.5: AI Enhancement (structure-preserving) ---
+    enhancement_metrics = {}
+    edge_map = None
+    try:
+        from services.enhancement import enhance_image, ENABLE_DUAL_INFERENCE
+        import hashlib as _hl
+
+        cache_key = _hl.md5(satellite_image_path.encode()).hexdigest()[:12]
+        enhanced_image, edge_map, enhancement_metrics = enhance_image(
+            masked_image,
+            parcel_mask=parcel_mask,
+            validate=True,
+            cache_key=cache_key,
+        )
+
+        if enhancement_metrics.get("enhancement_applied"):
+            eh, ew = enhanced_image.shape[:2]
+            parcel_mask_enh = cv2.resize(parcel_mask, (ew, eh), interpolation=cv2.INTER_NEAREST)
+
+            # --- Step 4: Multi-Scale Ensemble Inference & TTA ---
+            # We run segmentation on multiple variations and vote on the mask
+            # Variation 1: Base enhanced image
+            mask_v1 = _segment_building_footprint(enhanced_image, edge_map)
+            
+            # Variation 2: 1.5x Upscaled (captures fine structures)
+            upscaled = cv2.resize(enhanced_image, (int(ew * 1.5), int(eh * 1.5)), interpolation=cv2.INTER_LANCZOS4)
+            edge_up = cv2.resize(edge_map, (int(ew * 1.5), int(eh * 1.5)), interpolation=cv2.INTER_LANCZOS4) if edge_map is not None else None
+            mask_v2_up = _segment_building_footprint(upscaled, edge_up)
+            mask_v2 = cv2.resize(mask_v2_up, (ew, eh), interpolation=cv2.INTER_NEAREST)
+
+            # Variation 3: Slight Gaussian Blur (ignores noisy textures)
+            blurred = cv2.GaussianBlur(enhanced_image, (3, 3), 0)
+            edge_blur = cv2.GaussianBlur(edge_map, (3, 3), 0) if edge_map is not None else None
+            mask_v3 = _segment_building_footprint(blurred, edge_blur)
+
+            # Variation 4: TTA Rotated 90 degrees
+            rotated = cv2.rotate(enhanced_image, cv2.ROTATE_90_CLOCKWISE)
+            edge_rot = cv2.rotate(edge_map, cv2.ROTATE_90_CLOCKWISE) if edge_map is not None else None
+            mask_v4_rot = _segment_building_footprint(rotated, edge_rot)
+            # Inverse rotate
+            mask_v4 = cv2.rotate(mask_v4_rot, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+            # --- Ensemble Majority Vote ---
+            # Sum the normalized masks (0 or 1)
+            vote_stack = np.stack([mask_v1 > 0, mask_v2 > 0, mask_v3 > 0, mask_v4 > 0], axis=0).astype(np.uint8)
+            vote_sum = np.sum(vote_stack, axis=0)
+            
+            # Keep pixels where at least 2 models (or variations) agree
+            ensemble_mask = np.where(vote_sum >= 2, 255, 0).astype(np.uint8)
+
+            # Add Dual-Inference Safety (original image cross-check)
+            if ENABLE_DUAL_INFERENCE:
+                mask_original = _segment_building_footprint(masked_image)
+                mask_original = cv2.bitwise_and(mask_original, mask_original, mask=parcel_mask)
+                mask_original_up = cv2.resize(mask_original, (ew, eh), interpolation=cv2.INTER_NEAREST)
+                
+                # Intersection: only keep areas detected in both original AND the ensemble
+                building_mask_enh = cv2.bitwise_and(mask_original_up, ensemble_mask)
+                enhancement_metrics["dual_inference"] = True
+            else:
+                building_mask_enh = ensemble_mask
+                enhancement_metrics["dual_inference"] = False
+
+            # --- Step 4.5: Post-Processing Geometry Regularization ---
+            # Enforce straight lines and clean architectural edges utilizing approxPolyDP
+            building_mask_enh = cv2.bitwise_and(building_mask_enh, building_mask_enh, mask=parcel_mask_enh)
+            building_mask_enh = _regularize_geometry(building_mask_enh)
+
+            # Downscale back to original image dims for calculation
+            building_mask = cv2.resize(building_mask_enh, (w, h), interpolation=cv2.INTER_NEAREST)
+
+            if eh != h or ew != w:
+                vis_image = cv2.resize(enhanced_image, (w, h), interpolation=cv2.INTER_AREA)
+            else:
+                vis_image = enhanced_image.copy()
+        else:
+            # Fallback
+            building_mask = _segment_building_footprint(masked_image)
+            building_mask = cv2.bitwise_and(building_mask, building_mask, mask=parcel_mask)
+            building_mask = _regularize_geometry(building_mask)
+
+    except ImportError:
+        enhancement_metrics = {"enhancement_applied": False, "reason": "module_not_available"}
+        building_mask = _segment_building_footprint(masked_image)
+        building_mask = cv2.bitwise_and(building_mask, building_mask, mask=parcel_mask)
+        building_mask = _regularize_geometry(building_mask)
+    except Exception as e:
+        enhancement_metrics = {"enhancement_applied": False, "reason": str(e)}
+        print(f"[cv_coverage] Enhancement failed: {e}")
+        building_mask = _segment_building_footprint(masked_image)
+        building_mask = cv2.bitwise_and(building_mask, building_mask, mask=parcel_mask)
+        building_mask = _regularize_geometry(building_mask)
+
     building_pixel_area = np.count_nonzero(building_mask)
 
     # --- Step 5: Calculate areas & coverage ---
@@ -72,28 +160,27 @@ def estimate_lot_coverage(
     expansion_risk = "HIGH" if coverage_pct > (zoning_max * 0.9) else "LOW"
 
     # --- Step 6: Generate Visualization ---
-    # Semi-transparent red overlay on detected buildings
     red_overlay = np.zeros_like(vis_image)
     red_overlay[building_mask > 0] = [0, 0, 255]
     vis_image = cv2.addWeighted(vis_image, 1.0, red_overlay, 0.4, 0)
 
-    # Draw parcel boundary outline in bright cyan
     parcel_contours, _ = cv2.findContours(
         parcel_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
-    cv2.drawContours(vis_image, parcel_contours, -1, (255, 255, 0), 2)  # cyan BGR
+    cv2.drawContours(vis_image, parcel_contours, -1, (255, 255, 0), 2)
 
-    # Semi-transparent dark overlay on everything OUTSIDE the parcel
     outside_mask = cv2.bitwise_not(parcel_mask)
-    dark_overlay = np.zeros_like(vis_image)
-    dark_overlay[outside_mask > 0] = [0, 0, 0]
     vis_image[outside_mask > 0] = (
         vis_image[outside_mask > 0] * 0.35
     ).astype(np.uint8)
 
-    # Text overlay
     text = f"Coverage: {coverage_pct*100:.1f}% (Max {zoning_max*100:.0f}%)"
     cv2.putText(vis_image, text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+
+    # Enhancement badge
+    if enhancement_metrics.get("enhancement_applied"):
+        enh_text = f"AI Enhanced | SSIM={enhancement_metrics.get('ssim_score', 0):.2f}"
+        cv2.putText(vis_image, enh_text, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 128), 1)
 
     parcel_label = "PARCEL BOUNDARY" if has_real_parcel else "ESTIMATED BOUNDARY"
     cv2.putText(vis_image, parcel_label, (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 1)
@@ -112,7 +199,8 @@ def estimate_lot_coverage(
         "zoning_max_coverage": zoning_max,
         "expansion_risk": expansion_risk,
         "method": "cv_segmentation",
-        "confidence": 0.90 if has_real_parcel else 0.75,
+        "confidence": 0.92 if (has_real_parcel and enhancement_metrics.get("enhancement_applied")) else (0.90 if has_real_parcel else 0.75),
+        "enhancement": enhancement_metrics,
         "debug_image_url": f"/images/{out_filename}",
     }
 
@@ -194,10 +282,10 @@ def _build_parcel_mask(
 # Building segmentation
 # ---------------------------------------------------------------------------
 
-def _segment_building_footprint(image: np.ndarray) -> np.ndarray:
+def _segment_building_footprint(image: np.ndarray, edge_map: np.ndarray = None) -> np.ndarray:
     """
-    Detect building footprint using HSV color masking.
-    Removes vegetation and shadows, then finds the largest structures.
+    Detect building footprint using HSV color masking combined with EdgeMap.
+    Removes vegetation and shadows, then uses geometric edges to refine boundaries.
     """
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -222,6 +310,18 @@ def _segment_building_footprint(image: np.ndarray) -> np.ndarray:
 
     # Foreground = everything not background
     fg_mask = cv2.bitwise_not(bg_mask)
+
+    # --- Incorporate the EdgeMap ---
+    if edge_map is not None:
+        # Subtract strong edges from the foreground to cleanly detach connected components
+        # (e.g., separating a house from an adjacent concrete patio or driveway)
+        _, strong_edges = cv2.threshold(edge_map, 100, 255, cv2.THRESH_BINARY)
+        # Dilate edges slightly to act as a stronger separator
+        kernel_edge = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        separators = cv2.dilate(strong_edges, kernel_edge, iterations=1)
+        
+        # Cut the foreground mask using the edges
+        fg_mask[separators > 0] = 0
 
     # Morphological cleanup
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
@@ -311,3 +411,24 @@ def _mock_coverage_result() -> dict:
             "Only 2% margin remaining -- expansion risk is HIGH."
         ),
     }
+def _regularize_geometry(mask: np.ndarray, epsilon_factor: float = 0.015) -> np.ndarray:
+    """
+    Post-processing Geometry Regularization.
+    
+    Extracts contours from the segmentation mask and applies approxPolyDP 
+    to simplify the shapes into straight-edged, CAD-like polygons.
+    """
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    regularized_mask = np.zeros_like(mask)
+    
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > 100:  # Ignore tiny noise
+            # epsilon represents the maximum distance between original curve and the approximation
+            epsilon = epsilon_factor * cv2.arcLength(cnt, True)
+            approx_polygon = cv2.approxPolyDP(cnt, epsilon, True)
+            
+            # Draw the regularized, straight-line polygon
+            cv2.drawContours(regularized_mask, [approx_polygon], -1, 255, thickness=cv2.FILLED)
+            
+    return regularized_mask
