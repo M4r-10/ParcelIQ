@@ -153,7 +153,7 @@ function App() {
                                     e.preventDefault();
                                     handleAnalyze(addressInput);
                                 }}
-                                className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 shadow-card-soft sm:flex-row sm:items-center"
+                                className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 shadow-card-soft transition hover:border-primary/50 hover:shadow-glow sm:flex-row sm:items-center"
                             >
                                 <div className="flex flex-1 items-center gap-2 px-2">
                                     <span className="text-lg">📍</span>
@@ -228,7 +228,7 @@ function App() {
                         <motion.div
                             animate={{ rotateY: [10, 18, 10] }}
                             transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-                            className="glass-panel relative aspect-[4/3] overflow-hidden"
+                            className="glass-panel relative aspect-[4/3] overflow-hidden transition hover:border-primary/50 hover:shadow-glow"
                         >
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.4),_transparent_60%),linear-gradient(145deg,#020617,#020617_20%,#0f172a_60%,#1d4ed8_100%)]" />
                             <div className="relative flex h-full flex-col justify-between p-5">
@@ -361,7 +361,7 @@ function App() {
                                         initial={{ x: -20, opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
                                         transition={{ duration: 0.4, ease: 'easeOut' }}
-                                        className="glass-panel relative h-72 overflow-hidden bg-gradient-to-br from-sky-900/40 via-slate-900/90 to-background"
+                                        className="glass-panel relative h-72 overflow-hidden bg-gradient-to-br from-sky-900/40 via-slate-900/90 to-background transition hover:border-primary/50 hover:shadow-glow"
                                         id={sectionIds.spatialRisk}
                                     >
                                         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.28),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(15,23,42,1),_rgba(15,23,42,1))]" />
@@ -407,7 +407,7 @@ function App() {
                                         </ul>
 
                                         <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                                            <div className="rounded-xl bg-black/30 p-3">
+                                            <div className="rounded-xl border border-white/5 bg-black/30 p-3 transition hover:border-primary/50 hover:shadow-glow">
                                                 <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary">
                                                     Lot Coverage
                                                 </div>
@@ -418,7 +418,7 @@ function App() {
                                                     Within current zoning envelope.
                                                 </div>
                                             </div>
-                                            <div className="rounded-xl bg-black/30 p-3">
+                                            <div className="rounded-xl border border-white/5 bg-black/30 p-3 transition hover:border-primary/50 hover:shadow-glow">
                                                 <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary">
                                                     Flood Exposure
                                                 </div>
@@ -481,7 +481,7 @@ function App() {
                                         initial={{ x: 20, opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
                                         transition={{ duration: 0.4, ease: 'easeOut' }}
-                                        className="glass-panel flex h-72 flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-900/80 via-background to-slate-950"
+                                        className="glass-panel flex h-72 flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-900/80 via-background to-slate-950 transition hover:border-primary/50 hover:shadow-glow"
                                     >
                                         <div className="text-center text-xs uppercase tracking-[0.22em] text-text-secondary">
                                             Composite Risk Score
@@ -682,7 +682,7 @@ function App() {
                                     visible: { opacity: 1, y: 0 },
                                 }}
                                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4"
+                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
                             >
                                 <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[11px] text-emerald-300">
@@ -711,7 +711,7 @@ function App() {
                             hidden: {},
                             visible: { transition: { staggerChildren: 0.1 } },
                         }}
-                        className="glass-panel grid gap-4 border-white/5 bg-card/70 px-4 py-3 text-xs text-text-secondary sm:grid-cols-4"
+                        className="glass-panel grid gap-4 border-white/5 bg-card/70 px-4 py-3 text-xs text-text-secondary sm:grid-cols-4 transition hover:border-primary/50 hover:shadow-glow"
                     >
                         {[
                             {
@@ -783,7 +783,7 @@ function App() {
                             <motion.article
                                 key={post.title}
                                 {...fadeUp}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4"
+                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
                             >
                                 <div className="text-xs font-semibold text-text-primary">{post.title}</div>
                                 <p className="text-xs text-text-secondary">{post.body}</p>
@@ -796,7 +796,7 @@ function App() {
                 {/* No demo form — the experience starts directly with an address. */}
                 <section
                     id={sectionIds.demo}
-                    className="space-y-4 rounded-2xl border border-dashed border-white/10 bg-black/30 p-5 text-xs text-text-secondary"
+                    className="space-y-4 rounded-2xl border border-dashed border-white/10 bg-black/30 p-5 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
                 >
                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                         Open Access
