@@ -619,7 +619,7 @@ function App() {
 
                         <motion.div
                             {...fadeUp}
-                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs text-text-secondary"
+                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
                         >
                             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                                 Credibility
