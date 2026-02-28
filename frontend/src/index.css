@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-background text-text-primary font-['Inter',system-ui,sans-serif] antialiased;
+}
+
+/* Subtle scrollbars */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+/* Glass panels */
+.glass-panel {
+  @apply bg-card/70 border border-white/10 backdrop-blur-xl shadow-card-soft rounded-xl;
+}
+
+/* Mouse-follow glow helper */
+.cursor-glow {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0.65;
+  z-index: -1;
+}
