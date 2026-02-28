@@ -700,17 +700,79 @@ def compute_risk_score(property_data: dict) -> dict:
         final_score = weighted_score
         scoring_method = "weighted_only"
         
+    # Build human-readable factor breakdown
+    def _severity(s):
+        if s >= 0.8: return "Critical"
+        if s >= 0.6: return "High"
+        if s >= 0.4: return "Moderate"
+        if s >= 0.2: return "Low"
+        return "Minimal"
+
+    def _flood_display():
+        if inside_flood:
+            return f"Zone {flood_zone}", f"Inside flood zone {flood_zone}"
+        elif flood_dist < 500:
+            return f"{int(flood_dist)}m from zone", f"{int(flood_dist)}m from nearest flood boundary"
+        else:
+            return "Zone X — Safe", "Outside flood hazard area"
+
+    flood_disp, flood_desc = _flood_display()
+
+    factors_dict = {
+        "flood": {
+            "label": "Flood Zone Exposure",
+            "description": flood_desc,
+            "display_value": flood_disp,
+            "score": round(f_flood * 100, 1),
+            "weight": W_FLOOD,
+            "severity": _severity(f_flood),
+        },
+        "easement": {
+            "label": "Easement Encroachment",
+            "description": f"Building setback proximity to parcel boundary",
+            "display_value": f"{round(easement_pct * 100, 1)}%" if easement_pct > 0.01 else "None detected",
+            "score": round(f_easement * 100, 1),
+            "weight": W_EASEMENT,
+            "severity": _severity(f_easement),
+        },
+        "coverage": {
+            "label": "Lot Coverage",
+            "description": f"{round(coverage_pct * 100, 1)}% of lot vs {round(zoning_max * 100)}% zoning max",
+            "display_value": f"{round(coverage_pct * 100, 1)}%",
+            "score": round(f_coverage * 100, 1),
+            "weight": W_COVERAGE,
+            "severity": _severity(f_coverage),
+        },
+        "ownership": {
+            "label": "Ownership Volatility",
+            "description": f"{num_transfers} transfer{'s' if num_transfers != 1 else ''} in 5 yrs, avg hold {avg_hold:.1f} yrs",
+            "display_value": f"{num_transfers} transfer{'s' if num_transfers != 1 else ''}" if num_transfers > 0 else "Stable",
+            "score": round(f_ownership * 100, 1),
+            "weight": W_OWNERSHIP,
+            "severity": _severity(f_ownership),
+        },
+        "age": {
+            "label": "Property Age",
+            "description": f"Estimated {prop_age} years old" if prop_age > 0 else "Age unknown",
+            "display_value": f"{prop_age} yrs",
+            "score": round(f_age * 100, 1),
+            "weight": W_AGE,
+            "severity": _severity(f_age),
+        },
+        "cv_delta": {
+            "label": "Survey Discrepancy",
+            "description": f"CV vs recorded area differs by {round(cv_delta * 100, 1)}%",
+            "display_value": f"{round(cv_delta * 100, 1)}% gap" if cv_delta > 0.01 else "Consistent",
+            "score": round(f_cv * 100, 1),
+            "weight": W_CV_DELTA,
+            "severity": _severity(f_cv),
+        },
+    }
+
     return {
         "overall_score": final_score,
         "risk_tier": get_risk_tier(final_score),
-        "factors": {
-            "flood": {"score": f_flood, "weight": W_FLOOD},
-            "easement": {"score": f_easement, "weight": W_EASEMENT},
-            "coverage": {"score": f_coverage, "weight": W_COVERAGE},
-            "ownership": {"score": f_ownership, "weight": W_OWNERSHIP},
-            "age": {"score": f_age, "weight": W_AGE},
-            "cv_delta": {"score": f_cv, "weight": W_CV_DELTA}
-        },
+        "factors": factors_dict,
         "interactions": {
             "value": interaction
         },
