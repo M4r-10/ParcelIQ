@@ -13,18 +13,16 @@ Routes:
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from config import Config
+from models.flood_prediction import predict_next_flood_zones
+from models.wildfire_prediction import fetch_wildfire_zones
+from models.earthquake_prediction import fetch_earthquake_zones
 from services.risk_scoring import compute_risk_score, get_risk_tier
 from services.cv_coverage import estimate_lot_coverage
 from services.satellite_client import fetch_satellite_image
 from services.ai_summary import generate_risk_summary
 from services.geocoding import geocode_address, fetch_parcel_boundary, fetch_building_footprint
-from services.fema_client import query_flood_zone
-from services.spatial_analysis import (
-    estimate_property_age,
-    estimate_easement_encroachment,
-    estimate_ownership_volatility,
-    estimate_cv_delta,
-)
+from services.fema_client import query_flood_zone, fetch_historical_flood_claims
+from services.spatial_analysis import estimate_easement_encroachment
 from services.melissa_client import lookup_property, compute_ownership_from_sale_info
 from data.mock_data import SAMPLE_PARCELS
 
@@ -97,9 +95,10 @@ def analyze_property():
     coverage_pct = coverage_result["lot_coverage_pct"]
 
     # ------------------------------------------------------------------
-    # Step 3: Query FEMA for real flood zone data
+    # Step 3: Query FEMA for real flood zone data and historical claims
     # ------------------------------------------------------------------
     flood_data = query_flood_zone(lat, lng)
+    historical_flood_claims = fetch_historical_flood_claims(lat, lng)
 
     # ------------------------------------------------------------------
     # Step 3.5: Fetch real property data from Melissa (county assessor)
@@ -143,6 +142,14 @@ def analyze_property():
         if official_sqft > 0:
             cv_delta = abs(geometric_sqft - official_sqft) / official_sqft
 
+    # Fetch wildfire perimeters early (used for both risk scoring and response)
+    wildfire_zones = fetch_wildfire_zones(lat, lng)
+    wildfire_count = len(wildfire_zones.get("features", []))
+
+    # Fetch earthquake history early 
+    earthquake_zones = fetch_earthquake_zones(lat, lng)
+    earthquake_count = len(earthquake_zones.get("features", []))
+
     property_data = {
         "flood_zone": flood_data["zone"],
         "inside_flood": flood_data["inside_flood"],
@@ -155,6 +162,11 @@ def analyze_property():
         "property_age": prop_age,
         "zoning_max_coverage": Config.DEFAULT_MAX_LOT_COVERAGE,
         "cv_vs_recorded_area_delta": cv_delta,
+        "historical_flood_claims": historical_flood_claims,
+        "wildfire_count": wildfire_count,
+        "earthquake_count": earthquake_count,
+        "flood_data_source": flood_data.get("source", "Elevation/Proximity Heuristic"),
+        "melissa_data_source": "County Records" if melissa_data else None,
     }
 
     # ------------------------------------------------------------------
@@ -166,6 +178,13 @@ def analyze_property():
     # Step 6: Generate AI summary (grounded in SHAP + risk factors)
     # ------------------------------------------------------------------
     summary_result = generate_risk_summary(risk_result, address=address)
+
+    # ------------------------------------------------------------------
+    # Step 7: Generate AI Predictive Flood Basin Highlight
+    # ------------------------------------------------------------------
+    ai_flood_zone = None
+    if historical_flood_claims > 0:
+        ai_flood_zone = predict_next_flood_zones(lat, lng, historical_flood_claims)
 
     # ------------------------------------------------------------------
     # Assemble response
@@ -181,6 +200,9 @@ def analyze_property():
         "ai_summary": summary_result,
         "flood_data": flood_data,
         "melissa_data": melissa_data,
+        "ai_flood_zone": ai_flood_zone,
+        "wildfire_zones": wildfire_zones,
+        "earthquake_zones": earthquake_zones,
         "derived_factors": {
             "property_age": prop_age,
             "easement_encroachment": easement_pct,

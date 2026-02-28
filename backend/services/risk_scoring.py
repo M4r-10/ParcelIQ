@@ -62,12 +62,14 @@ W_WEIGHTED = 0.70   # weight of the analytical/weighted path
 W_ML       = 0.30   # weight of the ML prediction path
 
 # Per-factor base weights  (must sum to 1.0)
-W_FLOOD     = 0.25
-W_EASEMENT  = 0.20
-W_COVERAGE  = 0.20
-W_OWNERSHIP = 0.15
-W_AGE       = 0.10
-W_CV_DELTA  = 0.10
+W_FLOOD       = 0.20
+W_WILDFIRE    = 0.15
+W_EARTHQUAKE  = 0.15
+W_EASEMENT    = 0.15
+W_COVERAGE    = 0.15
+W_OWNERSHIP   = 0.10  
+W_AGE         = 0.05
+W_CV_DELTA    = 0.05
 
 # Non-linear transform parameters
 LOT_SIGMOID_K  = 15.0   # sigmoid sharpness around zoning limit
@@ -145,6 +147,57 @@ def nl_flood_risk(
         return 1.0
     else: 
         return 1.0 - math.exp(-FLOOD_ALPHA / distance_to_boundary_m) 
+
+
+def nl_historical_flood_risk(claims: int) -> float:
+    """
+    Sigmoid-like thresholding for historical flood claims in the grid.
+    
+    Formula: Risk = 1.0 - exp(-claims / 50.0)
+    
+    Behavior:
+      - 0 claims = 0.0 risk
+      - 35 claims = ~0.50 risk
+      - 100 claims = ~0.86 risk
+      - 250+ claims = ~0.99 risk
+    """
+    if claims <= 0:
+        return 0.0
+    return 1.0 - math.exp(-claims / 50.0)
+
+
+def nl_wildfire_risk(fire_count: int) -> float:
+    """
+    Non-linear scoring for historical wildfire exposure.
+    
+    Formula: Risk = 1.0 - exp(-fire_count / 2.0)
+    
+    Behavior:
+      - 0 fires = 0.0 risk
+      - 1 fire  = ~0.39 risk
+      - 3 fires = ~0.78 risk
+      - 5+ fires = ~0.92+ risk
+    """
+    if fire_count <= 0:
+        return 0.0
+    return 1.0 - math.exp(-fire_count / 2.0)
+
+
+def nl_earthquake_risk(quake_count: int) -> float:
+    """
+    Non-linear scoring for historical earthquake exposure (Mag 4.5+).
+    
+    Formula: Risk = 1.0 - exp(-quake_count / 3.0)
+    
+    Behavior:
+      - 0 quakes = 0.0 risk
+      - 1 quake  = ~0.28 risk
+      - 3 quakes = ~0.63 risk
+      - 5+ quakes = ~0.81+ risk
+    """
+    if quake_count <= 0:
+        return 0.0
+    return 1.0 - math.exp(-quake_count / 3.0)
 
 
 def nl_lot_coverage_risk(
@@ -659,6 +712,9 @@ def compute_risk_score(property_data: dict) -> dict:
     easement_pct = property_data.get("easement_encroachment", 0.0)
     coverage_pct = property_data.get("lot_coverage_pct", 0.0)
     zoning_max = property_data.get("zoning_max_coverage", 0.70)
+    historical_claims = property_data.get("historical_flood_claims", 0)
+    wildfire_count = property_data.get("wildfire_count", 0)
+    earthquake_count = property_data.get("earthquake_count", 0)
     
     # These may be None when Melissa data is unavailable
     num_transfers = property_data.get("num_transfers_5yr")
@@ -669,8 +725,11 @@ def compute_risk_score(property_data: dict) -> dict:
     
     # Compute non-linear scores for available factors
     f_flood = nl_flood_risk(inside_flood, flood_dist, flood_zone)
+    f_historical = nl_historical_flood_risk(historical_claims)
     f_easement = nl_easement_risk(easement_pct)
     f_coverage = nl_lot_coverage_risk(coverage_pct, zoning_max)
+    f_wildfire = nl_wildfire_risk(wildfire_count)
+    f_earthquake = nl_earthquake_risk(earthquake_count)
     
     # Track which factors are available vs unavailable
     f_ownership = None
@@ -686,7 +745,9 @@ def compute_risk_score(property_data: dict) -> dict:
     
     # Build weighted score from available factors only, re-normalizing weights
     available = {
-        "flood": (W_FLOOD, f_flood),
+        "flood": (W_FLOOD, f_historical), # Base it purely off history now
+        "wildfire": (W_WILDFIRE, f_wildfire),
+        "earthquake": (W_EARTHQUAKE, f_earthquake),
         "easement": (W_EASEMENT, f_easement),
         "coverage": (W_COVERAGE, f_coverage),
     }
@@ -753,6 +814,27 @@ def compute_risk_score(property_data: dict) -> dict:
             return "Zone X — Safe", "Outside flood hazard area"
 
     flood_disp, flood_desc = _flood_display()
+    
+    def _historical_level(claims):
+        if claims <= 0: return "Level 0 (No Claims)"
+        if claims <= 50: return "Level 1 (0-50 claims)"
+        if claims <= 200: return "Level 2 (51-200 claims)"
+        if claims <= 1000: return "Level 3 (201-1000 claims)"
+        return "Level 4 (1000+ claims)"
+
+    def _wildfire_level(count):
+        if count <= 0: return "Level 0 (No fires)"
+        if count == 1: return "Level 1 (1 historical fire)"
+        if count <= 3: return f"Level 2 ({count} fires)"
+        if count <= 7: return f"Level 3 ({count} fires)"
+        return f"Level 4 ({count}+ fires)"
+
+    def _earthquake_level(count):
+        if count <= 0: return "Level 0 (No quakes >4.5M)"
+        if count == 1: return "Level 1 (1 quake >4.5M)"
+        if count <= 3: return f"Level 2 ({count} quakes >4.5M)"
+        if count <= 8: return f"Level 3 ({count} quakes >4.5M)"
+        return f"Level 4 ({count}+ quakes >4.5M)"
 
     # Helper for unavailable factor entries
     def _unavailable_factor(label):
@@ -768,12 +850,28 @@ def compute_risk_score(property_data: dict) -> dict:
 
     factors_dict = {
         "flood": {
-            "label": "Flood Zone Exposure",
-            "description": flood_desc,
-            "display_value": flood_disp,
-            "score": round(f_flood * 100, 1),
+            "label": "Flood Risk Analysis",
+            "description": "Reported FEMA NFIP claims historically in the surrounding 6-mile grid area",
+            "display_value": _historical_level(historical_claims),
+            "score": round(f_historical * 100, 1),
             "weight": W_FLOOD,
-            "severity": _severity(f_flood),
+            "severity": _severity(f_historical),
+        },
+        "wildfire": {
+            "label": "Wildfire Risk Analysis",
+            "description": "Historical wildfire perimeters overlapping this area (NIFC database)",
+            "display_value": _wildfire_level(wildfire_count),
+            "score": round(f_wildfire * 100, 1),
+            "weight": W_WILDFIRE,
+            "severity": _severity(f_wildfire),
+        },
+        "earthquake": {
+            "label": "Seismic Risk Analysis",
+            "description": "Historical earthquakes >4.5M within 50km (USGS database)",
+            "display_value": _earthquake_level(earthquake_count),
+            "score": round(f_earthquake * 100, 1),
+            "weight": W_EARTHQUAKE,
+            "severity": _severity(f_earthquake),
         },
         "easement": {
             "label": "Easement Encroachment",
