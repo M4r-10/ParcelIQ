@@ -13,6 +13,7 @@ import Footer from './components/Footer';
 import RiskScoreCard from './components/RiskScoreCard';
 import SpatialVisualizer from './components/SpatialVisualizer';
 import PropertyDashboard from './components/PropertyDashboard';
+import AddressAutocomplete from './components/AddressAutocomplete';
 import { analyzeProperty } from './services/api';
 
 const sectionIds = {
@@ -155,17 +156,15 @@ function App() {
                                 }}
                                 className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 shadow-card-soft transition hover:border-primary/50 hover:shadow-glow sm:flex-row sm:items-center"
                             >
-                                <div className="flex flex-1 items-center gap-2 px-2">
-                                    <span className="text-lg">📍</span>
-                                    <input
-                                        type="text"
-                                        value={addressInput}
-                                        onChange={(e) => setAddressInput(e.target.value)}
-                                        placeholder="Enter a property address..."
-                                        className="h-10 w-full bg-transparent text-sm text-text-primary placeholder:text-text-secondary/60 outline-none"
-                                        disabled={isLoading}
-                                    />
-                                </div>
+                                <AddressAutocomplete
+                                    value={addressInput}
+                                    onChange={setAddressInput}
+                                    onSelect={(suggestion) => {
+                                        handleAnalyze(suggestion.shortName);
+                                    }}
+                                    disabled={isLoading}
+                                    placeholder="Enter a property address..."
+                                />
                                 <motion.button
                                     whileHover={{ scale: 1.03 }}
                                     whileTap={{ scale: 0.97 }}

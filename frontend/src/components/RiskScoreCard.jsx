@@ -139,26 +139,60 @@ function RiskScoreCard({ riskData, coverageData, isLoading, score }) {
                 <div className="mb-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
                     Risk Factors
                 </div>
-                <div className="flex flex-col gap-4">
-                    {factors && Object.entries(factors).map(([key, factor]) => (
-                        <div key={key} className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-text-secondary">{factor.label}</span>
-                                <span className="font-mono text-xs font-semibold text-text-primary tabular-nums">
-                                    {factor.score}
-                                </span>
-                            </div>
-                            <div className="h-1 w-full overflow-hidden rounded-full bg-white/5">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${factor.score}%` }}
-                                    transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
-                                    className="h-full rounded-full"
-                                    style={{ background: getScoreColor(factor.score) }}
-                                />
-                            </div>
-                        </div>
-                    ))}
+                <div className="flex flex-col gap-5">
+                    {factors && Object.entries(factors).map(([key, factor], idx) => {
+                        const barColor = getScoreColor(factor.score);
+                        const severityStyle = getSeverityStyle(factor.severity);
+
+                        return (
+                            <motion.div
+                                key={key}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.35, delay: 0.08 * idx }}
+                                className="group"
+                            >
+                                {/* Header row: label + display value */}
+                                <div className="mb-1.5 flex items-center justify-between gap-2">
+                                    <span className="text-xs font-semibold text-text-primary">
+                                        {factor.label || key}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span
+                                            className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                                            style={{
+                                                background: severityStyle.bg,
+                                                color: severityStyle.fg,
+                                            }}
+                                        >
+                                            {factor.severity}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Display value + description */}
+                                <div className="mb-2 flex items-baseline justify-between gap-2">
+                                    <span className="text-[11px] text-text-secondary">
+                                        {factor.description}
+                                    </span>
+                                    <span className="shrink-0 text-xs font-bold tabular-nums" style={{ color: barColor }}>
+                                        {factor.display_value}
+                                    </span>
+                                </div>
+
+                                {/* Progress bar */}
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min(factor.score, 100)}%` }}
+                                        transition={{ duration: 1, delay: 0.15 + 0.08 * idx, ease: 'easeOut' }}
+                                        className="h-full rounded-full"
+                                        style={{ background: barColor }}
+                                    />
+                                </div>
+                            </motion.div>
+                        );
+                    })}
                 </div>
             </motion.div>
 
@@ -257,6 +291,16 @@ function getTierColors(tier) {
         case 'moderate': return { bg: 'rgba(234,179,8,0.1)', fg: '#EAB308' };
         case 'low': return { bg: 'rgba(74,222,128,0.1)', fg: '#4ADE80' };
         default: return { bg: 'rgba(34,197,94,0.1)', fg: '#22C55E' };
+    }
+}
+
+function getSeverityStyle(severity) {
+    switch (severity?.toLowerCase()) {
+        case 'critical': return { bg: 'rgba(239,68,68,0.15)', fg: '#EF4444' };
+        case 'high': return { bg: 'rgba(249,115,22,0.15)', fg: '#F97316' };
+        case 'moderate': return { bg: 'rgba(234,179,8,0.15)', fg: '#EAB308' };
+        case 'low': return { bg: 'rgba(74,222,128,0.12)', fg: '#4ADE80' };
+        default: return { bg: 'rgba(34,197,94,0.12)', fg: '#22C55E' };
     }
 }
 
