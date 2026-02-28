@@ -132,7 +132,7 @@ function App() {
                     >
                         <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-primary">
                             <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow" />
-                            Spatial Intelligence for Title
+                            Spatial Property Risk Intelligence Engine
                         </div>
                         <div className="space-y-4">
                             <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[3.1rem]">
@@ -585,7 +585,7 @@ function App() {
                             className="space-y-4 text-sm text-text-secondary"
                         >
                             <p>
-                                TitleGuard AI transforms static title reports into spatial intelligence. We help title
+                                ParcelIQ transforms static title reports into spatial intelligence. We help title
                                 insurers, lenders, and real estate professionals surface risk before closing — when it
                                 is still cheap to fix.
                             </p>
@@ -802,7 +802,7 @@ function App() {
                         Open Access
                     </div>
                     <p className="max-w-xl">
-                        TitleGuard AI is available to try directly from the hero search — no sales form or gated demo.
+                        ParcelIQ is available to try directly from the hero search — no sales form or gated demo.
                         Enter a live address above and you&apos;ll be taken into the spatial risk and AI engine
                         experience.
                     </p>

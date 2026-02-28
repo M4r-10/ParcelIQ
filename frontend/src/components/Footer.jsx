@@ -8,13 +8,13 @@ function Footer() {
         <footer className="border-t border-white/10 bg-black/40">
             <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 text-xs text-text-secondary lg:flex-row lg:items-start lg:justify-between lg:px-8">
                 <div className="space-y-2">
-                    <div className="text-sm font-semibold text-text-primary">TitleGuard AI</div>
+                    <div className="text-sm font-semibold text-text-primary">ParcelIQ</div>
                     <p className="max-w-sm">
                         Spatial intelligence for title, underwriting, and real estate professionals. Reduce closing
                         friction by surfacing risk before it becomes expensive.
                     </p>
                     <div className="text-[11px] text-text-secondary/80">
-                        © {new Date().getFullYear()} TitleGuard AI. All rights reserved.
+                        © {new Date().getFullYear()} ParcelIQ. All rights reserved.
                     </div>
                 </div>
 

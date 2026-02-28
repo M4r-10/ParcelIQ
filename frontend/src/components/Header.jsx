@@ -31,7 +31,7 @@ function Header({ onLogoClick, onScrollToSection }) {
                     </div>
                     <div>
                         <div className="text-sm font-semibold tracking-tight text-text-primary">
-                            TitleGuard AI
+                            ParcelIQ
                         </div>
                         <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary">
                             Spatial Risk Intelligence
