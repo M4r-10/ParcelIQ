@@ -1,0 +1,36 @@
+{
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -117.82645,
+                    33.68045
+                ],
+                [
+                    -117.82615,
+                    33.68045
+                ],
+                [
+                    -117.82615,
+                    33.68020
+                ],
+                [
+                    -117.82645,
+                    33.68020
+                ],
+                [
+                    -117.82645,
+                    33.68045
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "building_area_sqft": 4200,
+        "stories": 1,
+        "year_built": 1992,
+        "structure_type": "single_family"
+    }
+}

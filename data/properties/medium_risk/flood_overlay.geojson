@@ -1,0 +1,36 @@
+{
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -117.82700,
+                    33.68000
+                ],
+                [
+                    -117.82600,
+                    33.68000
+                ],
+                [
+                    -117.82600,
+                    33.67950
+                ],
+                [
+                    -117.82700,
+                    33.67950
+                ],
+                [
+                    -117.82700,
+                    33.68000
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "flood_zone": "X",
+        "inside_flood": false,
+        "distance_to_boundary_m": 45.2,
+        "description": "Zone X — Near AE boundary. Parcel edge is approximately 45 meters from the 100-year floodplain."
+    }
+}

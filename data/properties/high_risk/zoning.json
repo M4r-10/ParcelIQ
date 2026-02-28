@@ -1,0 +1,10 @@
+{
+    "zoning_type": "R1",
+    "zoning_description": "Single-Family Residential",
+    "max_lot_coverage": 0.70,
+    "max_height_ft": 30,
+    "setback_front_ft": 20,
+    "setback_side_ft": 5,
+    "setback_rear_ft": 15,
+    "min_lot_size_sqft": 5000
+}

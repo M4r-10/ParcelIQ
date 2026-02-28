@@ -1,0 +1,41 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -117.82650,
+                            33.68020
+                        ],
+                        [
+                            -117.82640,
+                            33.68020
+                        ],
+                        [
+                            -117.82640,
+                            33.68015
+                        ],
+                        [
+                            -117.82650,
+                            33.68015
+                        ],
+                        [
+                            -117.82650,
+                            33.68020
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "easement_type": "utility",
+                "description": "Southern California Edison — 10ft utility easement along rear lot line",
+                "encroachment_pct": 0.08,
+                "width_ft": 10
+            }
+        }
+    ]
+}

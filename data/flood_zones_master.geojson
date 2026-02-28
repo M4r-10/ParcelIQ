@@ -1,0 +1,117 @@
+{
+    "type": "FeatureCollection",
+    "name": "Irvine Demo Flood Zones",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -117.84200,
+                            33.67650
+                        ],
+                        [
+                            -117.83800,
+                            33.67650
+                        ],
+                        [
+                            -117.83800,
+                            33.67400
+                        ],
+                        [
+                            -117.84200,
+                            33.67400
+                        ],
+                        [
+                            -117.84200,
+                            33.67650
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "flood_zone": "AE",
+                "zone_description": "100-year floodplain — FEMA Special Flood Hazard Area",
+                "base_flood_elevation_ft": 42,
+                "source": "FEMA NFHL (simulated)",
+                "panel_number": "06059C0402J"
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -117.84200,
+                            33.67650
+                        ],
+                        [
+                            -117.83800,
+                            33.67650
+                        ],
+                        [
+                            -117.83800,
+                            33.67350
+                        ],
+                        [
+                            -117.84200,
+                            33.67350
+                        ],
+                        [
+                            -117.84200,
+                            33.67650
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "flood_zone": "X",
+                "zone_description": "Area of minimal flood hazard — outside SFHA",
+                "base_flood_elevation_ft": null,
+                "source": "FEMA NFHL (simulated)",
+                "panel_number": "06059C0402J"
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -117.82800,
+                            33.68100
+                        ],
+                        [
+                            -117.82500,
+                            33.68100
+                        ],
+                        [
+                            -117.82500,
+                            33.67900
+                        ],
+                        [
+                            -117.82800,
+                            33.67900
+                        ],
+                        [
+                            -117.82800,
+                            33.68100
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "flood_zone": "AE",
+                "zone_description": "100-year floodplain — nearest boundary to medium-risk property",
+                "base_flood_elevation_ft": 38,
+                "source": "FEMA NFHL (simulated)",
+                "panel_number": "06059C0404J"
+            }
+        }
+    ]
+}

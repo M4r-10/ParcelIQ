@@ -1,0 +1,68 @@
+{
+    "version": "1.0",
+    "description": "Global zoning thresholds for Irvine, CA demo properties",
+    "zones": {
+        "R1": {
+            "name": "Single-Family Residential",
+            "max_lot_coverage": 0.65,
+            "max_height_ft": 35,
+            "min_lot_size_sqft": 6000,
+            "setbacks": {
+                "front_ft": 20,
+                "side_ft": 5,
+                "rear_ft": 15
+            },
+            "notes": "Standard R1 — applies to most demo properties"
+        },
+        "R1-7500": {
+            "name": "Single-Family Residential (7,500 sqft min)",
+            "max_lot_coverage": 0.60,
+            "max_height_ft": 35,
+            "min_lot_size_sqft": 7500,
+            "setbacks": {
+                "front_ft": 25,
+                "side_ft": 5,
+                "rear_ft": 20
+            },
+            "notes": "Larger lot district — stricter coverage"
+        },
+        "R2": {
+            "name": "Two-Family Residential",
+            "max_lot_coverage": 0.75,
+            "max_height_ft": 30,
+            "min_lot_size_sqft": 5000,
+            "setbacks": {
+                "front_ft": 15,
+                "side_ft": 5,
+                "rear_ft": 10
+            },
+            "notes": "Higher density allowed"
+        },
+        "R3": {
+            "name": "Multi-Family Residential",
+            "max_lot_coverage": 0.80,
+            "max_height_ft": 45,
+            "min_lot_size_sqft": 6000,
+            "setbacks": {
+                "front_ft": 15,
+                "side_ft": 5,
+                "rear_ft": 10
+            },
+            "notes": "Apartments and condominiums"
+        }
+    },
+    "coverage_thresholds": {
+        "safe": {
+            "max_ratio": 0.85,
+            "label": "Within Limit"
+        },
+        "warning": {
+            "max_ratio": 0.95,
+            "label": "Near Limit"
+        },
+        "violation": {
+            "max_ratio": 1.0,
+            "label": "Exceeds Limit"
+        }
+    }
+}

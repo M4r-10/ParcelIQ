@@ -1,0 +1,31 @@
+{
+    "property_id": "MED-001",
+    "address": "456 Oak Ave, Irvine, CA 92620",
+    "risk_label": "moderate",
+    "expected_probability_range": [
+        0.30,
+        0.50
+    ],
+    "description": "Older single-family home near flood boundary with high lot coverage and minor utility easement encroachment.",
+    "geocoding": {
+        "latitude": 33.68033,
+        "longitude": -117.82630,
+        "bbox": [
+            -117.82650,
+            33.68015,
+            -117.82610,
+            33.68050
+        ]
+    },
+    "satellite": {
+        "image_path": "satellite.png",
+        "bbox": [
+            -117.82670,
+            33.68005,
+            -117.82590,
+            33.68060
+        ],
+        "width_px": 512,
+        "height_px": 512
+    }
+}

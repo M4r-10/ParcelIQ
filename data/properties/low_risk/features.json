@@ -1,0 +1,17 @@
+{
+    "flood_exposure": 0,
+    "flood_boundary_distance": 320.5,
+    "easement_encroachment_pct": 0.0,
+    "lot_coverage_ratio": 0.373,
+    "property_age": 11,
+    "num_transfers_5yr": 0,
+    "avg_holding_period_years": 10.7,
+    "ownership_anomaly_score": 0.02,
+    "cv_vs_recorded_area_delta": 0.01,
+    "building_area_sqft": 2800,
+    "lot_area_sqft": 7500,
+    "zoning_max_coverage": 0.65,
+    "coverage_over_limit": false,
+    "stories": 2,
+    "year_built": 2015
+}

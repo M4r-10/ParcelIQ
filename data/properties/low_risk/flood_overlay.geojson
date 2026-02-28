@@ -1,0 +1,36 @@
+{
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -117.79700,
+                    33.68300
+                ],
+                [
+                    -117.79650,
+                    33.68300
+                ],
+                [
+                    -117.79650,
+                    33.68250
+                ],
+                [
+                    -117.79700,
+                    33.68250
+                ],
+                [
+                    -117.79700,
+                    33.68300
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "flood_zone": "X",
+        "inside_flood": false,
+        "distance_to_boundary_m": 320.5,
+        "description": "Zone X — Minimal flood hazard. Parcel is well outside the 100-year floodplain."
+    }
+}

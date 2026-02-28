@@ -1,0 +1,37 @@
+{
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -117.84100,
+                    33.67600
+                ],
+                [
+                    -117.83950,
+                    33.67600
+                ],
+                [
+                    -117.83950,
+                    33.67490
+                ],
+                [
+                    -117.84100,
+                    33.67490
+                ],
+                [
+                    -117.84100,
+                    33.67600
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "flood_zone": "AE",
+        "inside_flood": true,
+        "distance_to_boundary_m": 0.0,
+        "base_flood_elevation_ft": 42,
+        "description": "Zone AE — High-risk flood area. Parcel is fully within the 100-year floodplain with a base flood elevation of 42 ft."
+    }
+}

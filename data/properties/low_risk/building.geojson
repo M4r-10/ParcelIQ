@@ -1,0 +1,36 @@
+{
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -117.79492,
+                    33.68542
+                ],
+                [
+                    -117.79472,
+                    33.68542
+                ],
+                [
+                    -117.79472,
+                    33.68522
+                ],
+                [
+                    -117.79492,
+                    33.68522
+                ],
+                [
+                    -117.79492,
+                    33.68542
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "building_area_sqft": 2800,
+        "stories": 2,
+        "year_built": 2015,
+        "structure_type": "single_family"
+    }
+}

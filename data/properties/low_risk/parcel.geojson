@@ -1,0 +1,35 @@
+{
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -117.79500,
+                    33.68550
+                ],
+                [
+                    -117.79460,
+                    33.68550
+                ],
+                [
+                    -117.79460,
+                    33.68510
+                ],
+                [
+                    -117.79500,
+                    33.68510
+                ],
+                [
+                    -117.79500,
+                    33.68550
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "parcel_id": "LOW-001",
+        "address": "123 Meadowbrook Ln, Irvine, CA 92618",
+        "lot_area_sqft": 7500
+    }
+}

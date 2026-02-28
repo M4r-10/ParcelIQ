@@ -1,0 +1,31 @@
+{
+    "property_id": "HIGH-001",
+    "address": "789 River Rd, Irvine, CA 92606",
+    "risk_label": "high",
+    "expected_probability_range": [
+        0.70,
+        0.90
+    ],
+    "description": "Pre-1970 home inside AE flood zone with lot coverage exceeding zoning max, major easement encroachment, and a suspicious LLC flip pattern in ownership history.",
+    "geocoding": {
+        "latitude": 33.67535,
+        "longitude": -117.84030,
+        "bbox": [
+            -117.84050,
+            33.67520,
+            -117.84010,
+            33.67550
+        ]
+    },
+    "satellite": {
+        "image_path": "satellite.png",
+        "bbox": [
+            -117.84070,
+            33.67510,
+            -117.83990,
+            33.67560
+        ],
+        "width_px": 512,
+        "height_px": 512
+    }
+}

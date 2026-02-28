@@ -1,0 +1,56 @@
+[
+    {
+        "owner": "Harold & June Whitfield",
+        "entity_type": "Individual",
+        "purchase_date": "1965-03-11",
+        "sale_date": "1998-08-20",
+        "purchase_price": 42000,
+        "holding_period_years": 33.4,
+        "notes": "Original owners. Long-term stable hold."
+    },
+    {
+        "owner": "George Ramirez",
+        "entity_type": "Individual",
+        "purchase_date": "1998-09-15",
+        "sale_date": "2014-06-01",
+        "purchase_price": 280000,
+        "holding_period_years": 15.7,
+        "notes": "Second owner. Standard sale via agent."
+    },
+    {
+        "owner": "Sunset Horizon LLC",
+        "entity_type": "LLC",
+        "purchase_date": "2014-07-10",
+        "sale_date": "2017-01-22",
+        "purchase_price": 395000,
+        "holding_period_years": 2.5,
+        "notes": "⚠ LLC entity. Acquired below market value. Possible flip intent."
+    },
+    {
+        "owner": "Pacific Coast Holdings Inc",
+        "entity_type": "Corporation",
+        "purchase_date": "2017-02-15",
+        "sale_date": "2019-08-05",
+        "purchase_price": 470000,
+        "holding_period_years": 2.5,
+        "notes": "⚠ Corporate entity. Rapid resale with minimal improvements."
+    },
+    {
+        "owner": "TrueVest Capital LLC",
+        "entity_type": "LLC",
+        "purchase_date": "2019-09-01",
+        "sale_date": "2022-03-10",
+        "purchase_price": 510000,
+        "holding_period_years": 2.5,
+        "notes": "⚠ Third LLC in chain. Pattern consistent with speculative flipping."
+    },
+    {
+        "owner": "Apex Land Group LLC",
+        "entity_type": "LLC",
+        "purchase_date": "2022-04-18",
+        "sale_date": null,
+        "purchase_price": 545000,
+        "holding_period_years": 3.9,
+        "notes": "⚠ Current holder. Fourth LLC entity. Ownership anomaly score: HIGH."
+    }
+]

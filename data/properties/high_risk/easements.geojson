@@ -1,0 +1,77 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -117.84050,
+                            33.67535
+                        ],
+                        [
+                            -117.84030,
+                            33.67535
+                        ],
+                        [
+                            -117.84030,
+                            33.67520
+                        ],
+                        [
+                            -117.84050,
+                            33.67520
+                        ],
+                        [
+                            -117.84050,
+                            33.67535
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "easement_type": "drainage",
+                "description": "OCFCD — 20ft storm drainage easement along western lot line",
+                "encroachment_pct": 0.14,
+                "width_ft": 20
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -117.84020,
+                            33.67550
+                        ],
+                        [
+                            -117.84010,
+                            33.67550
+                        ],
+                        [
+                            -117.84010,
+                            33.67530
+                        ],
+                        [
+                            -117.84020,
+                            33.67530
+                        ],
+                        [
+                            -117.84020,
+                            33.67550
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "easement_type": "access",
+                "description": "Shared driveway access easement — encroaches into buildable area",
+                "encroachment_pct": 0.08,
+                "width_ft": 12
+            }
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+[
+    {
+        "owner": "Robert Martinez",
+        "entity_type": "Individual",
+        "purchase_date": "2005-09-22",
+        "sale_date": "2013-04-10",
+        "purchase_price": 485000,
+        "holding_period_years": 7.6,
+        "notes": "Long-term owner. Standard residential sale."
+    },
+    {
+        "owner": "Sarah & David Kim",
+        "entity_type": "Individual",
+        "purchase_date": "2013-05-15",
+        "sale_date": "2019-11-03",
+        "purchase_price": 560000,
+        "holding_period_years": 6.5,
+        "notes": "Family relocation sale."
+    },
+    {
+        "owner": "Patricia Nguyen",
+        "entity_type": "Individual",
+        "purchase_date": "2020-01-14",
+        "sale_date": null,
+        "purchase_price": 620000,
+        "holding_period_years": 6.1,
+        "notes": "Current owner. No flags."
+    }
+]

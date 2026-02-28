@@ -1,0 +1,17 @@
+{
+    "flood_exposure": 1,
+    "flood_boundary_distance": 0.0,
+    "easement_encroachment_pct": 0.22,
+    "lot_coverage_ratio": 0.80,
+    "property_age": 61,
+    "num_transfers_5yr": 3,
+    "avg_holding_period_years": 1.82,
+    "ownership_anomaly_score": 0.87,
+    "cv_vs_recorded_area_delta": 0.23,
+    "building_area_sqft": 4160,
+    "lot_area_sqft": 5200,
+    "zoning_max_coverage": 0.70,
+    "coverage_over_limit": true,
+    "stories": 1,
+    "year_built": 1965
+}

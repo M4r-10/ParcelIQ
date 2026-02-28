@@ -1,0 +1,31 @@
+{
+    "property_id": "LOW-001",
+    "address": "123 Meadowbrook Ln, Irvine, CA 92618",
+    "risk_label": "low",
+    "expected_probability_range": [
+        0.05,
+        0.15
+    ],
+    "description": "Newly-built single-family home in a low-flood zone with stable ownership and ample setback from lot limits.",
+    "geocoding": {
+        "latitude": 33.68530,
+        "longitude": -117.79480,
+        "bbox": [
+            -117.79500,
+            33.68510,
+            -117.79460,
+            33.68550
+        ]
+    },
+    "satellite": {
+        "image_path": "satellite.png",
+        "bbox": [
+            -117.79520,
+            33.68500,
+            -117.79440,
+            33.68560
+        ],
+        "width_px": 512,
+        "height_px": 512
+    }
+}

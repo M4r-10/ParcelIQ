@@ -1,0 +1,17 @@
+{
+    "flood_exposure": 0,
+    "flood_boundary_distance": 45.2,
+    "easement_encroachment_pct": 0.08,
+    "lot_coverage_ratio": 0.70,
+    "property_age": 34,
+    "num_transfers_5yr": 1,
+    "avg_holding_period_years": 6.73,
+    "ownership_anomaly_score": 0.18,
+    "cv_vs_recorded_area_delta": 0.09,
+    "building_area_sqft": 4200,
+    "lot_area_sqft": 6000,
+    "zoning_max_coverage": 0.75,
+    "coverage_over_limit": false,
+    "stories": 1,
+    "year_built": 1992
+}
