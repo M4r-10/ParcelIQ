@@ -24,6 +24,7 @@ from services.spatial_analysis import (
     estimate_ownership_volatility,
     estimate_cv_delta,
 )
+from services.melissa_client import lookup_property, compute_ownership_from_sale_info
 from data.mock_data import SAMPLE_PARCELS
 
 app = Flask(__name__)
@@ -81,12 +82,45 @@ def analyze_property():
     flood_data = query_flood_zone(lat, lng)
 
     # ------------------------------------------------------------------
-    # Step 4: Derive all remaining risk factors dynamically
+    # Step 3.5: Fetch real property data from Melissa (county assessor)
+    # Uses only 1 API call (LookupProperty) to save credits
     # ------------------------------------------------------------------
-    prop_age = estimate_property_age(lat, lng, building)
+    melissa_data = lookup_property(address)
+
+    # ------------------------------------------------------------------
+    # Step 4: Derive risk factors — prefer Melissa, fall back to heuristics
+    # ------------------------------------------------------------------
+
+    # Property age: Melissa year_built is ground truth
+    if melissa_data and melissa_data.get("year_built"):
+        prop_age = max(0, 2026 - melissa_data["year_built"])
+    else:
+        prop_age = estimate_property_age(lat, lng, building)
+
+    # Lot coverage: use Melissa building_sqft / lot_sqft if available
+    if melissa_data and melissa_data.get("building_sqft") and melissa_data.get("lot_sqft"):
+        melissa_coverage = melissa_data["building_sqft"] / melissa_data["lot_sqft"]
+        coverage_pct = min(1.0, melissa_coverage)
+
     easement_pct = estimate_easement_encroachment(parcel, building)
-    ownership = estimate_ownership_volatility(building, coverage_pct, prop_age)
-    cv_delta = estimate_cv_delta(coverage_pct, building, parcel)
+
+    # Ownership: derive from Melissa SaleInfo, or heuristic fallback
+    sale_ownership = compute_ownership_from_sale_info(melissa_data)
+    if sale_ownership:
+        ownership = sale_ownership
+    else:
+        ownership = estimate_ownership_volatility(building, coverage_pct, prop_age)
+
+    # CV delta: compare Melissa's official sqft vs geometric estimate
+    if melissa_data and melissa_data.get("building_sqft") and coverage_result.get("building_area_sqft"):
+        geometric_sqft = coverage_result["building_area_sqft"]
+        official_sqft = melissa_data["building_sqft"]
+        if official_sqft > 0:
+            cv_delta = abs(geometric_sqft - official_sqft) / official_sqft
+        else:
+            cv_delta = estimate_cv_delta(coverage_pct, building, parcel)
+    else:
+        cv_delta = estimate_cv_delta(coverage_pct, building, parcel)
 
     property_data = {
         "flood_zone": flood_data["zone"],
@@ -124,11 +158,13 @@ def analyze_property():
         "risk": risk_result,
         "ai_summary": summary_result,
         "flood_data": flood_data,
+        "melissa_data": melissa_data,
         "derived_factors": {
             "property_age": prop_age,
             "easement_encroachment": easement_pct,
             "ownership": ownership,
             "cv_delta": cv_delta,
+            "data_source": "melissa" if melissa_data else "heuristic",
         },
     }
 
