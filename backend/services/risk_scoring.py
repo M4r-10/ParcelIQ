@@ -374,6 +374,10 @@ def _train_models():
         _delay_model = joblib.load(lr_path)
         _scaler = joblib.load(sc_path)
 
+        # Patch for scikit-learn version differences on older pickled models
+        if not hasattr(_delay_model, 'multi_class'):
+            _delay_model.multi_class = 'auto'
+
         _X_train = None #TODO Intialize later with actual data
         _init_shap()
         return
