@@ -100,6 +100,14 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
         const map = mapRef.current;
         const { location, parcel, building, layers, address: resultAddress } = analysisResult;
 
+        // 4) Dynamic AI Flood Zone
+        if (analysisResult.ai_flood_zone && map.getSource('ai-flood-zone')) {
+            map.getSource('ai-flood-zone').setData(analysisResult.ai_flood_zone);
+            console.log("Plotting AI dynamic flood zone");
+        } else if (map.getSource('ai-flood-zone')) {
+             map.getSource('ai-flood-zone').setData({ type: 'FeatureCollection', features: [] });
+        }
+
         const displayAddress = address || resultAddress || 'Target Property';
 
         // Remove old marker
@@ -191,11 +199,6 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
             if (src) src.setData({ type: 'FeatureCollection', features: [parcel] });
         }
 
-        if (layers?.flood_zone?.geometry) {
-            const src = map.getSource('flood-zone');
-            if (src) src.setData({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: layers.flood_zone.geometry, properties: {} }] });
-        }
-
         if (layers?.easements?.geometry) {
             const src = map.getSource('easement');
             if (src) src.setData({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: layers.easements.geometry, properties: {} }] });
@@ -207,17 +210,21 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
         if (!mapRef.current || !mapReady || !activeLayers) return;
         const map = mapRef.current;
 
+        // ── Manage Toggles ──
         const layerMap = {
-            floodZone: 'flood-zone-fill',
-            easement: 'easement-fill',
-            buildableArea: 'buildable-fill',
-            encumberedArea: 'encumbered-fill',
-            buildingFootprint: 'footprint-fill',
+            floodZone: ['ai-flood-fill', 'ai-flood-outline'],
+            easement: ['easement-fill'],
+            buildableArea: ['buildable-fill'],
+            encumberedArea: ['encumbered-fill'],
+            buildingFootprint: ['footprint-fill'],
         };
 
-        for (const [key, layerId] of Object.entries(layerMap)) {
-            if (map.getLayer(layerId)) {
-                map.setLayoutProperty(layerId, 'visibility', activeLayers[key] ? 'visible' : 'none');
+        for (const [key, layerIds] of Object.entries(layerMap)) {
+            const vis = activeLayers[key] ? 'visible' : 'none';
+            for (const layerId of layerIds) {
+                if (map.getLayer(layerId)) {
+                    map.setLayoutProperty(layerId, 'visibility', vis);
+                }
             }
         }
     }, [activeLayers, mapReady]);
@@ -266,7 +273,10 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
 function addSources(map) {
     const empty = { type: 'FeatureCollection', features: [] };
     map.addSource('parcel', { type: 'geojson', data: empty });
-    map.addSource('flood-zone', { type: 'geojson', data: empty });
+    
+    // Dynamic AI flood highlighting zone
+    map.addSource('ai-flood-zone', { type: 'geojson', data: empty });
+    
     map.addSource('easement', { type: 'geojson', data: empty });
     map.addSource('buildable', { type: 'geojson', data: empty });
     map.addSource('encumbered', { type: 'geojson', data: empty });
@@ -296,7 +306,47 @@ function addLayers(map) {
 
     map.addLayer({ id: 'parcel-extrusion', type: 'fill-extrusion', source: 'parcel', paint: { 'fill-extrusion-color': '#ffffff', 'fill-extrusion-height': 3, 'fill-extrusion-opacity': 0.15 } });
     map.addLayer({ id: 'parcel-outline', type: 'line', source: 'parcel', paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.6 } });
-    map.addLayer({ id: 'flood-zone-fill', type: 'fill-extrusion', source: 'flood-zone', layout: { visibility: 'none' }, paint: { 'fill-extrusion-color': '#3b82f6', 'fill-extrusion-height': 5, 'fill-extrusion-opacity': 0.35 } });
+    
+    // Real FEMA NFHL Flood Zone Polygons
+    map.addLayer(
+        {
+            id: 'ai-flood-fill',
+            type: 'fill',
+            source: 'ai-flood-zone',
+            layout: { visibility: 'none' },
+            paint: {
+                // Color intensity based on zone severity weight
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['coalesce', ['get', 'severity'], 0.5],
+                    0.5, 'rgba(59, 130, 246, 0.25)',   // lighter blue for lower risk
+                    0.7, 'rgba(37, 99, 235, 0.35)',    // medium blue
+                    0.85, 'rgba(29, 78, 216, 0.45)',   // deep blue for AE zones
+                    1.0, 'rgba(30, 64, 175, 0.55)',    // darkest blue for VE zones
+                ],
+                'fill-opacity': 0.6,
+            }
+        },
+        '3d-buildings'
+    );
+
+    // Outline for the flood zone polygons
+    map.addLayer(
+        {
+            id: 'ai-flood-outline',
+            type: 'line',
+            source: 'ai-flood-zone',
+            layout: { visibility: 'none' },
+            paint: {
+                'line-color': '#3B82F6',
+                'line-width': 1.5,
+                'line-opacity': 0.7,
+            }
+        },
+        '3d-buildings'
+    );
+
     map.addLayer({ id: 'easement-fill', type: 'fill-extrusion', source: 'easement', layout: { visibility: 'none' }, paint: { 'fill-extrusion-color': '#ef4444', 'fill-extrusion-height': 6, 'fill-extrusion-opacity': 0.45 } });
     map.addLayer({ id: 'buildable-fill', type: 'fill', source: 'buildable', layout: { visibility: 'none' }, paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.2 } });
     map.addLayer({ id: 'encumbered-fill', type: 'fill', source: 'encumbered', layout: { visibility: 'none' }, paint: { 'fill-color': '#991b1b', 'fill-opacity': 0.4 } });

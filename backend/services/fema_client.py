@@ -246,3 +246,37 @@ def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     dlam = math.radians(lon2 - lon1)
     a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2) ** 2
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def fetch_historical_flood_claims(lat: float, lng: float) -> int:
+    """
+    Fetch historical flood insurance claims in the area using OpenFEMA.
+    
+    Because FEMA anonymizes claims to 1 decimal point of precision for privacy,
+    we query exactly that aggregated grid (~6x6 mile area).
+    """
+    try:
+        # Round to 1 decimal place matching FEMA's anonymized precision
+        r_lat = round(lat, 1)
+        r_lng = round(lng, 1)
+        
+        url = "https://www.fema.gov/api/open/v2/FimaNfipClaims"
+        params = {
+            "$filter": f"latitude eq {r_lat} and longitude eq {r_lng}",
+            "$inlinecount": "allpages",
+            "$top": "1",  # We only need the top 1 to get the inlinecount
+            "$format": "json"
+        }
+        
+        resp = requests.get(url, params=params, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        # OpenFEMA v2 returns inlinecount inside metadata
+        metadata = data.get("metadata", {})
+        count = metadata.get("count", 0)
+        
+        return count
+    except Exception as e:
+        print(f"OpenFEMA Historical Claims query failed: {e}")
+        return 0

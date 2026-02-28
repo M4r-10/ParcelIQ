@@ -62,12 +62,12 @@ W_WEIGHTED = 0.70   # weight of the analytical/weighted path
 W_ML       = 0.30   # weight of the ML prediction path
 
 # Per-factor base weights  (must sum to 1.0)
-W_FLOOD     = 0.25
-W_EASEMENT  = 0.20
-W_COVERAGE  = 0.20
-W_OWNERSHIP = 0.15
-W_AGE       = 0.10
-W_CV_DELTA  = 0.10
+W_FLOOD       = 0.30
+W_EASEMENT    = 0.20
+W_COVERAGE    = 0.20
+W_OWNERSHIP   = 0.10  
+W_AGE         = 0.10
+W_CV_DELTA    = 0.10
 
 # Non-linear transform parameters
 LOT_SIGMOID_K  = 15.0   # sigmoid sharpness around zoning limit
@@ -145,6 +145,23 @@ def nl_flood_risk(
         return 1.0
     else: 
         return 1.0 - math.exp(-FLOOD_ALPHA / distance_to_boundary_m) 
+
+
+def nl_historical_flood_risk(claims: int) -> float:
+    """
+    Sigmoid-like thresholding for historical flood claims in the grid.
+    
+    Formula: Risk = 1.0 - exp(-claims / 50.0)
+    
+    Behavior:
+      - 0 claims = 0.0 risk
+      - 35 claims = ~0.50 risk
+      - 100 claims = ~0.86 risk
+      - 250+ claims = ~0.99 risk
+    """
+    if claims <= 0:
+        return 0.0
+    return 1.0 - math.exp(-claims / 50.0)
 
 
 def nl_lot_coverage_risk(
@@ -659,6 +676,7 @@ def compute_risk_score(property_data: dict) -> dict:
     easement_pct = property_data.get("easement_encroachment", 0.0)
     coverage_pct = property_data.get("lot_coverage_pct", 0.0)
     zoning_max = property_data.get("zoning_max_coverage", 0.70)
+    historical_claims = property_data.get("historical_flood_claims", 0)
     
     # These may be None when Melissa data is unavailable
     num_transfers = property_data.get("num_transfers_5yr")
@@ -669,6 +687,7 @@ def compute_risk_score(property_data: dict) -> dict:
     
     # Compute non-linear scores for available factors
     f_flood = nl_flood_risk(inside_flood, flood_dist, flood_zone)
+    f_historical = nl_historical_flood_risk(historical_claims)
     f_easement = nl_easement_risk(easement_pct)
     f_coverage = nl_lot_coverage_risk(coverage_pct, zoning_max)
     
@@ -686,7 +705,7 @@ def compute_risk_score(property_data: dict) -> dict:
     
     # Build weighted score from available factors only, re-normalizing weights
     available = {
-        "flood": (W_FLOOD, f_flood),
+        "flood": (W_FLOOD, f_historical), # Base it purely off history now
         "easement": (W_EASEMENT, f_easement),
         "coverage": (W_COVERAGE, f_coverage),
     }
@@ -753,6 +772,13 @@ def compute_risk_score(property_data: dict) -> dict:
             return "Zone X — Safe", "Outside flood hazard area"
 
     flood_disp, flood_desc = _flood_display()
+    
+    def _historical_level(claims):
+        if claims <= 0: return "Level 0 (No Claims)"
+        if claims <= 50: return "Level 1 (0-50 claims)"
+        if claims <= 200: return "Level 2 (51-200 claims)"
+        if claims <= 1000: return "Level 3 (201-1000 claims)"
+        return "Level 4 (1000+ claims)"
 
     # Helper for unavailable factor entries
     def _unavailable_factor(label):
@@ -768,12 +794,12 @@ def compute_risk_score(property_data: dict) -> dict:
 
     factors_dict = {
         "flood": {
-            "label": "Flood Zone Exposure",
-            "description": flood_desc,
-            "display_value": flood_disp,
-            "score": round(f_flood * 100, 1),
+            "label": "Flood Risk Analysis",
+            "description": "Reported FEMA NFIP claims historically in the surrounding 6-mile grid area",
+            "display_value": _historical_level(historical_claims),
+            "score": round(f_historical * 100, 1),
             "weight": W_FLOOD,
-            "severity": _severity(f_flood),
+            "severity": _severity(f_historical),
         },
         "easement": {
             "label": "Easement Encroachment",
