@@ -114,6 +114,13 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
              map.getSource('wildfire-zone').setData({ type: 'FeatureCollection', features: [] });
         }
 
+        // 6) Historical Earthquake Zones (Points)
+        if (analysisResult.earthquake_zones && map.getSource('earthquake-zone')) {
+            map.getSource('earthquake-zone').setData(analysisResult.earthquake_zones);
+        } else if (map.getSource('earthquake-zone')) {
+             map.getSource('earthquake-zone').setData({ type: 'FeatureCollection', features: [] });
+        }
+
         const displayAddress = address || resultAddress || 'Target Property';
 
         // Remove old marker
@@ -220,6 +227,7 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
         const layerMap = {
             floodZone: ['ai-flood-fill', 'ai-flood-outline'],
             wildfireZone: ['wildfire-fill', 'wildfire-outline'],
+            earthquakeZone: ['earthquake-points'],
             easement: ['easement-fill'],
             buildableArea: ['buildable-fill'],
             encumberedArea: ['encumbered-fill'],
@@ -286,6 +294,9 @@ function addSources(map) {
     
     // Historical wildfire perimeters
     map.addSource('wildfire-zone', { type: 'geojson', data: empty });
+    
+    // Historical earthquake points
+    map.addSource('earthquake-zone', { type: 'geojson', data: empty });
     
     map.addSource('easement', { type: 'geojson', data: empty });
     map.addSource('buildable', { type: 'geojson', data: empty });
@@ -392,6 +403,33 @@ function addLayers(map) {
                 'line-color': '#F97316',
                 'line-width': 1.5,
                 'line-opacity': 0.7,
+            }
+        },
+        '3d-buildings'
+    );
+
+    // Real USGS Historical Earthquakes (Points)
+    map.addLayer(
+        {
+            id: 'earthquake-points',
+            type: 'circle',
+            source: 'earthquake-zone',
+            layout: { visibility: 'none' },
+            paint: {
+                // Size expands based on earthquake magnitude severity
+                'circle-radius': [
+                    'interpolate',
+                    ['linear'],
+                    ['coalesce', ['get', 'severity'], 0.5],
+                    0.2, 8,
+                    0.6, 16,
+                    1.0, 32,
+                ],
+                'circle-color': '#A855F7', // Purple
+                'circle-opacity': 0.6,
+                'circle-stroke-width': 1.5,
+                'circle-stroke-color': '#ffffff',
+                'circle-blur': 0.3, // Adds a glowing effect
             }
         },
         '3d-buildings'

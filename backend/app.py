@@ -15,6 +15,7 @@ from flask_cors import CORS
 from config import Config
 from models.flood_prediction import predict_next_flood_zones
 from models.wildfire_prediction import fetch_wildfire_zones
+from models.earthquake_prediction import fetch_earthquake_zones
 from services.risk_scoring import compute_risk_score, get_risk_tier
 from services.cv_coverage import estimate_lot_coverage
 from services.satellite_client import fetch_satellite_image
@@ -145,6 +146,10 @@ def analyze_property():
     wildfire_zones = fetch_wildfire_zones(lat, lng)
     wildfire_count = len(wildfire_zones.get("features", []))
 
+    # Fetch earthquake history early 
+    earthquake_zones = fetch_earthquake_zones(lat, lng)
+    earthquake_count = len(earthquake_zones.get("features", []))
+
     property_data = {
         "flood_zone": flood_data["zone"],
         "inside_flood": flood_data["inside_flood"],
@@ -159,6 +164,7 @@ def analyze_property():
         "cv_vs_recorded_area_delta": cv_delta,
         "historical_flood_claims": historical_flood_claims,
         "wildfire_count": wildfire_count,
+        "earthquake_count": earthquake_count,
         "flood_data_source": flood_data.get("source", "Elevation/Proximity Heuristic"),
         "melissa_data_source": "County Records" if melissa_data else None,
     }
@@ -196,6 +202,7 @@ def analyze_property():
         "melissa_data": melissa_data,
         "ai_flood_zone": ai_flood_zone,
         "wildfire_zones": wildfire_zones,
+        "earthquake_zones": earthquake_zones,
         "derived_factors": {
             "property_age": prop_age,
             "easement_encroachment": easement_pct,
