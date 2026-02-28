@@ -8,9 +8,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 
-function SpatialVisualizer({ analysisResult, activeLayers }) {
+function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, address }) {
     const mapContainerRef = useRef(null);
     const mapRef = useRef(null);
+    const markerRef = useRef(null);
     const [mapReady, setMapReady] = useState(false);
     const [noToken, setNoToken] = useState(false);
 
@@ -60,36 +61,84 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
             addLayers(map);
         });
 
-        // Slow auto-rotate
-        let frame;
-        const rotate = () => {
-            if (mapRef.current) {
-                mapRef.current.rotateTo((mapRef.current.getBearing() + 0.05) % 360, { duration: 0 });
-            }
-            frame = requestAnimationFrame(rotate);
-        };
-
-        map.on('load', () => { rotate(); });
-
         return () => {
-            cancelAnimationFrame(frame);
             map.remove();
             mapRef.current = null;
             setMapReady(false);
         };
     }, [token]);
 
-    // ── Update data on new analysis ──
+    // ── Pre-flight to initial location (quick pan while backend loads) ──
+    useEffect(() => {
+        if (!mapRef.current || !mapReady || !initialLocation) return;
+
+        mapRef.current.flyTo({
+            center: [initialLocation.lng, initialLocation.lat],
+            zoom: 17, pitch: 55, bearing: -25, duration: 2000,
+        });
+    }, [initialLocation, mapReady]);
+
+    // ── Update data on new analysis (uses backend's authoritative geocode) ──
     useEffect(() => {
         if (!mapRef.current || !mapReady || !analysisResult) return;
         const map = mapRef.current;
         const { location, parcel, layers } = analysisResult;
 
         if (location) {
+            const coords = [location.lng, location.lat];
+
+            // Fly to the backend-geocoded location
             map.flyTo({
-                center: [location.lng, location.lat],
+                center: coords,
                 zoom: 17, pitch: 55, bearing: -25, duration: 2000,
             });
+
+            // Place address marker at the precise backend coordinates
+            if (markerRef.current) markerRef.current.remove();
+
+            const el = document.createElement('div');
+            el.className = 'target-marker';
+            el.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, #2563eb, #7c3aed);
+                    color: white;
+                    padding: 6px 12px;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    white-space: nowrap;
+                    box-shadow: 0 4px 20px rgba(37,99,235,0.5);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    pointer-events: none;
+                ">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:14px;">&#x1F4CD;</span>
+                        <span>${address || analysisResult.address || 'Target Property'}</span>
+                    </div>
+                </div>
+                <div style="
+                    width: 2px; height: 30px;
+                    background: linear-gradient(to bottom, #2563eb, transparent);
+                    margin: 0 auto;
+                "></div>
+                <div style="
+                    width: 8px; height: 8px;
+                    background: #2563eb;
+                    border-radius: 50%;
+                    margin: 0 auto;
+                    box-shadow: 0 0 12px 4px rgba(37,99,235,0.6);
+                "></div>
+            `;
+
+            markerRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+                .setLngLat(coords)
+                .addTo(map);
+
+            // Highlight the building at this location after the flyTo completes
+            setTimeout(() => {
+                if (!mapRef.current) return;
+                highlightBuildingAt(map, coords);
+            }, 2200);
         }
 
         if (parcel) {
@@ -106,7 +155,7 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
             const src = map.getSource('easement');
             if (src) src.setData({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: layers.easements.geometry, properties: {} }] });
         }
-    }, [analysisResult, mapReady]);
+    }, [analysisResult, mapReady, address]);
 
     // ── Toggle layer visibility ──
     useEffect(() => {
@@ -177,9 +226,29 @@ function addSources(map) {
     map.addSource('buildable', { type: 'geojson', data: empty });
     map.addSource('encumbered', { type: 'geojson', data: empty });
     map.addSource('footprint', { type: 'geojson', data: empty });
+    map.addSource('highlight-building', { type: 'geojson', data: empty });
 }
 
 function addLayers(map) {
+    // Standard mapbox 3D buildings
+    map.addLayer(
+        {
+            'id': '3d-buildings',
+            'source': 'composite',
+            'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
+            'type': 'fill-extrusion',
+            'minzoom': 14,
+            'paint': {
+                'fill-extrusion-color': '#2a2a35',
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': ['get', 'min_height'],
+                'fill-extrusion-opacity': 0.8
+            }
+        },
+        // Insert it below our custom layers if we want, but standard is just add at the end
+    );
+
     map.addLayer({ id: 'parcel-extrusion', type: 'fill-extrusion', source: 'parcel', paint: { 'fill-extrusion-color': '#ffffff', 'fill-extrusion-height': 3, 'fill-extrusion-opacity': 0.15 } });
     map.addLayer({ id: 'parcel-outline', type: 'line', source: 'parcel', paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.6 } });
     map.addLayer({ id: 'flood-zone-fill', type: 'fill-extrusion', source: 'flood-zone', layout: { visibility: 'none' }, paint: { 'fill-extrusion-color': '#3b82f6', 'fill-extrusion-height': 5, 'fill-extrusion-opacity': 0.35 } });
@@ -187,6 +256,54 @@ function addLayers(map) {
     map.addLayer({ id: 'buildable-fill', type: 'fill', source: 'buildable', layout: { visibility: 'none' }, paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.2 } });
     map.addLayer({ id: 'encumbered-fill', type: 'fill', source: 'encumbered', layout: { visibility: 'none' }, paint: { 'fill-color': '#991b1b', 'fill-opacity': 0.4 } });
     map.addLayer({ id: 'footprint-fill', type: 'fill-extrusion', source: 'footprint', layout: { visibility: 'none' }, paint: { 'fill-extrusion-color': '#ffffff', 'fill-extrusion-height': 8, 'fill-extrusion-opacity': 0.5 } });
+
+    // Highlighted target building layer (bright cyan glow)
+    map.addLayer({
+        id: 'highlight-building-fill',
+        type: 'fill-extrusion',
+        source: 'highlight-building',
+        paint: {
+            'fill-extrusion-color': '#38bdf8',
+            'fill-extrusion-height': ['coalesce', ['get', 'height'], 12],
+            'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
+            'fill-extrusion-opacity': 0.85,
+        },
+    });
+}
+
+/**
+ * Query the 3D building layer at the given coordinates and
+ * copy the matched building geometry into the highlight source.
+ */
+function highlightBuildingAt(map, lngLat) {
+    try {
+        const point = map.project(lngLat);
+        // Query in a small box around the point to catch the building
+        const bbox = [
+            [point.x - 5, point.y - 5],
+            [point.x + 5, point.y + 5],
+        ];
+        const features = map.queryRenderedFeatures(bbox, { layers: ['3d-buildings'] });
+
+        const src = map.getSource('highlight-building');
+        if (features.length > 0 && src) {
+            // Take the first (closest) building feature
+            const building = features[0];
+            src.setData({
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    geometry: building.geometry,
+                    properties: building.properties || {},
+                }],
+            });
+        } else if (src) {
+            // No building found — clear the highlight
+            src.setData({ type: 'FeatureCollection', features: [] });
+        }
+    } catch (err) {
+        console.warn('Could not highlight building:', err);
+    }
 }
 
 export default SpatialVisualizer;

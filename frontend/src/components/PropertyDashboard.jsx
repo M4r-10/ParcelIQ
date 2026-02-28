@@ -10,7 +10,7 @@ import LayerTogglePanel from './LayerTogglePanel';
 import RiskScoreCard from './RiskScoreCard';
 import AISummaryBox from './AISummaryBox';
 
-function PropertyDashboard({ analysisResult, isLoading, address, onBack }) {
+function PropertyDashboard({ analysisResult, isLoading, address, onBack, initialLocation }) {
     const [activeLayers, setActiveLayers] = useState({
         floodZone: false,
         easement: false,
@@ -66,6 +66,8 @@ function PropertyDashboard({ analysisResult, isLoading, address, onBack }) {
                     <SpatialVisualizer
                         analysisResult={analysisResult}
                         activeLayers={activeLayers}
+                        initialLocation={initialLocation}
+                        address={address}
                     />
                     <LayerTogglePanel
                         activeLayers={activeLayers}
