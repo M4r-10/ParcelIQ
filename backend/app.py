@@ -88,39 +88,40 @@ def analyze_property():
     melissa_data = lookup_property(address)
 
     # ------------------------------------------------------------------
-    # Step 4: Derive risk factors — prefer Melissa, fall back to heuristics
+    # Step 4: Derive risk factors — use real data only, no heuristics
     # ------------------------------------------------------------------
 
-    # Property age: Melissa year_built is ground truth
+    # Property age: only from Melissa (county assessor year_built)
     if melissa_data and melissa_data.get("year_built"):
         prop_age = max(0, 2026 - melissa_data["year_built"])
     else:
-        prop_age = estimate_property_age(lat, lng, building)
+        prop_age = None  # unavailable — shown as such in UI
 
-    # Lot coverage: use Melissa building_sqft / lot_sqft if available
+    # Lot coverage: Melissa building/lot sqft, or geometric from OSM
     if melissa_data and melissa_data.get("building_sqft") and melissa_data.get("lot_sqft"):
         melissa_coverage = melissa_data["building_sqft"] / melissa_data["lot_sqft"]
         coverage_pct = min(1.0, melissa_coverage)
+    # else: keep the geometric coverage_pct from Step 2 (real data)
 
+    # Easement: real geometric analysis from parcel/building shapes
     easement_pct = estimate_easement_encroachment(parcel, building)
 
-    # Ownership: derive from Melissa SaleInfo, or heuristic fallback
-    sale_ownership = compute_ownership_from_sale_info(melissa_data)
-    if sale_ownership:
-        ownership = sale_ownership
-    else:
-        ownership = estimate_ownership_volatility(building, coverage_pct, prop_age)
+    # Ownership: only from Melissa sale history
+    ownership = compute_ownership_from_sale_info(melissa_data)
+    if not ownership:
+        ownership = {
+            "num_transfers_5yr": None,
+            "avg_holding_period": None,
+            "ownership_anomaly_score": None,
+        }
 
-    # CV delta: compare Melissa's official sqft vs geometric estimate
+    # CV delta: only when Melissa sqft + geometric sqft both exist
+    cv_delta = None
     if melissa_data and melissa_data.get("building_sqft") and coverage_result.get("building_area_sqft"):
         geometric_sqft = coverage_result["building_area_sqft"]
         official_sqft = melissa_data["building_sqft"]
         if official_sqft > 0:
             cv_delta = abs(geometric_sqft - official_sqft) / official_sqft
-        else:
-            cv_delta = estimate_cv_delta(coverage_pct, building, parcel)
-    else:
-        cv_delta = estimate_cv_delta(coverage_pct, building, parcel)
 
     property_data = {
         "flood_zone": flood_data["zone"],
@@ -128,9 +129,9 @@ def analyze_property():
         "flood_boundary_distance": flood_data["flood_boundary_distance"],
         "easement_encroachment": easement_pct,
         "lot_coverage_pct": coverage_pct,
-        "num_transfers_5yr": ownership["num_transfers_5yr"],
-        "avg_holding_period": ownership["avg_holding_period"],
-        "ownership_anomaly_score": ownership["ownership_anomaly_score"],
+        "num_transfers_5yr": ownership.get("num_transfers_5yr"),
+        "avg_holding_period": ownership.get("avg_holding_period"),
+        "ownership_anomaly_score": ownership.get("ownership_anomaly_score"),
         "property_age": prop_age,
         "zoning_max_coverage": Config.DEFAULT_MAX_LOT_COVERAGE,
         "cv_vs_recorded_area_delta": cv_delta,

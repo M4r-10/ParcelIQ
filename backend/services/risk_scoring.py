@@ -656,37 +656,69 @@ def compute_risk_score(property_data: dict) -> dict:
     coverage_pct = property_data.get("lot_coverage_pct", 0.0)
     zoning_max = property_data.get("zoning_max_coverage", 0.70)
     
-    num_transfers = property_data.get("num_transfers_5yr", 0)
-    avg_hold = property_data.get("avg_holding_period", 10.0)
-    anomaly = property_data.get("ownership_anomaly_score", 0.0)
-    prop_age = property_data.get("property_age", 0)
-    cv_delta = property_data.get("cv_vs_recorded_area_delta", 0.0)
+    # These may be None when Melissa data is unavailable
+    num_transfers = property_data.get("num_transfers_5yr")
+    avg_hold = property_data.get("avg_holding_period")
+    anomaly = property_data.get("ownership_anomaly_score")
+    prop_age = property_data.get("property_age")
+    cv_delta = property_data.get("cv_vs_recorded_area_delta")
     
+    # Compute non-linear scores for available factors
     f_flood = nl_flood_risk(inside_flood, flood_dist, flood_zone)
     f_easement = nl_easement_risk(easement_pct)
     f_coverage = nl_lot_coverage_risk(coverage_pct, zoning_max)
-    f_ownership = nl_ownership_risk(num_transfers, avg_hold, anomaly)
-    f_age = nl_age_risk(prop_age)
-    f_cv = nl_cv_discrepancy_risk(cv_delta)
     
-    interaction = _interaction_terms(f_flood, f_easement, f_coverage, f_ownership)
+    # Track which factors are available vs unavailable
+    f_ownership = None
+    f_age = None
+    f_cv = None
     
-    weighted_raw = (W_FLOOD * f_flood + W_EASEMENT * f_easement + 
-                    W_COVERAGE * f_coverage + W_OWNERSHIP * f_ownership + 
-                    W_AGE * f_age + W_CV_DELTA * f_cv)
+    if num_transfers is not None and avg_hold is not None and anomaly is not None:
+        f_ownership = nl_ownership_risk(num_transfers, avg_hold, anomaly)
+    if prop_age is not None:
+        f_age = nl_age_risk(prop_age)
+    if cv_delta is not None:
+        f_cv = nl_cv_discrepancy_risk(cv_delta)
+    
+    # Build weighted score from available factors only, re-normalizing weights
+    available = {
+        "flood": (W_FLOOD, f_flood),
+        "easement": (W_EASEMENT, f_easement),
+        "coverage": (W_COVERAGE, f_coverage),
+    }
+    if f_ownership is not None:
+        available["ownership"] = (W_OWNERSHIP, f_ownership)
+    if f_age is not None:
+        available["age"] = (W_AGE, f_age)
+    if f_cv is not None:
+        available["cv_delta"] = (W_CV_DELTA, f_cv)
+    
+    total_weight = sum(w for w, _ in available.values())
+    if total_weight > 0:
+        weighted_raw = sum((w / total_weight) * s for w, s in available.values())
+    else:
+        weighted_raw = 0.0
+    
+    # Interaction terms (only if ownership is available)
+    interaction = _interaction_terms(
+        f_flood, f_easement, f_coverage,
+        f_ownership if f_ownership is not None else 0.0,
+    )
+    
     weighted_score = max(0.0, min(100.0, (weighted_raw + 0.15 * interaction) * 100))
     
+    # ML prediction (use 0.0 defaults for unavailable features)
     flood_exposure = float(inside_flood)
     feature_vec = [
         flood_exposure,
         float(flood_dist),
         float(easement_pct),
         float(coverage_pct),
-        float(prop_age),
-        float(num_transfers),
-        float(avg_hold),
-        float(anomaly),
-        float(cv_delta)
+        float(prop_age if prop_age is not None else 0),
+        float(num_transfers if num_transfers is not None else 0),
+        float(avg_hold if avg_hold is not None else 10.0),
+        float(anomaly if anomaly is not None else 0),
+        float(cv_delta if cv_delta is not None else 0),
     ]
     
     ml_result = _ml_predict(feature_vec)
@@ -718,6 +750,18 @@ def compute_risk_score(property_data: dict) -> dict:
 
     flood_disp, flood_desc = _flood_display()
 
+    # Helper for unavailable factor entries
+    def _unavailable_factor(label):
+        return {
+            "label": label,
+            "description": "Data unavailable for this property",
+            "display_value": "—",
+            "score": None,
+            "weight": 0,
+            "severity": "Unavailable",
+            "unavailable": True,
+        }
+
     factors_dict = {
         "flood": {
             "label": "Flood Zone Exposure",
@@ -743,31 +787,46 @@ def compute_risk_score(property_data: dict) -> dict:
             "weight": W_COVERAGE,
             "severity": _severity(f_coverage),
         },
-        "ownership": {
+    }
+
+    # Ownership
+    if f_ownership is not None:
+        factors_dict["ownership"] = {
             "label": "Ownership Volatility",
             "description": f"{num_transfers} transfer{'s' if num_transfers != 1 else ''} in 5 yrs, avg hold {avg_hold:.1f} yrs",
             "display_value": f"{num_transfers} transfer{'s' if num_transfers != 1 else ''}" if num_transfers > 0 else "Stable",
             "score": round(f_ownership * 100, 1),
             "weight": W_OWNERSHIP,
             "severity": _severity(f_ownership),
-        },
-        "age": {
+        }
+    else:
+        factors_dict["ownership"] = _unavailable_factor("Ownership Volatility")
+
+    # Property age
+    if f_age is not None:
+        factors_dict["age"] = {
             "label": "Property Age",
-            "description": f"Estimated {prop_age} years old" if prop_age > 0 else "Age unknown",
+            "description": f"Built {2026 - prop_age}, {prop_age} years old",
             "display_value": f"{prop_age} yrs",
             "score": round(f_age * 100, 1),
             "weight": W_AGE,
             "severity": _severity(f_age),
-        },
-        "cv_delta": {
+        }
+    else:
+        factors_dict["age"] = _unavailable_factor("Property Age")
+
+    # CV delta
+    if f_cv is not None:
+        factors_dict["cv_delta"] = {
             "label": "Survey Discrepancy",
             "description": f"CV vs recorded area differs by {round(cv_delta * 100, 1)}%",
             "display_value": f"{round(cv_delta * 100, 1)}% gap" if cv_delta > 0.01 else "Consistent",
             "score": round(f_cv * 100, 1),
             "weight": W_CV_DELTA,
             "severity": _severity(f_cv),
-        },
-    }
+        }
+    else:
+        factors_dict["cv_delta"] = _unavailable_factor("Survey Discrepancy")
 
     return {
         "overall_score": final_score,
