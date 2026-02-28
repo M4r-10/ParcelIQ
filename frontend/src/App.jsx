@@ -24,6 +24,8 @@ const sectionIds = {
     process: 'process',
     about: 'about',
     security: 'security',
+    outcomes: 'outcomes',
+    insights: 'insights',
     metrics: 'metrics',
     blog: 'blog',
     demo: 'demo',
@@ -137,11 +139,7 @@ function App() {
                         </div>
                         <div className="space-y-4">
                             <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[3.1rem]">
-                                Make Property Risk Spatial.
-                                <br />
-                                <span className="bg-gradient-to-r from-primary via-primary-flood to-sky-300 bg-clip-text text-transparent">
-                                    Underwrite With Intelligence.
-                                </span>
+                                Eliminate Underwriting Blindspots with Instant Spatial Intelligence.
                             </h1>
                             <p className="max-w-xl text-sm leading-relaxed text-text-secondary">
                                 Enter an address to generate an AI-powered spatial risk view — open for underwriters,
@@ -205,11 +203,11 @@ function App() {
                         </div>
                         <div className="flex flex-wrap gap-6 text-xs text-text-secondary">
                             <div>
-                                <div className="font-semibold text-text-primary">Minutes, not weeks</div>
+                                <div className="font-semibold text-text-primary">Instant Preliminary Search</div>
                                 Automated spatial checks across flood, easements, and coverage.
                             </div>
                             <div>
-                                <div className="font-semibold text-text-primary">Built for title</div>
+                                <div className="font-semibold text-text-primary">Clear Titles, Faster Closings</div>
                                 Designed with underwriters, examiners, and closers in mind.
                             </div>
                         </div>
@@ -695,6 +693,48 @@ function App() {
                     </motion.div>
                 </section>
 
+                {/* Insights (combined) */}
+                <section id={sectionIds.insights} className="space-y-6">
+                    <motion.div {...fadeUp}>
+                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                            Insights
+                        </h2>
+                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                            Data-driven intelligence for every decision.
+                        </p>
+                    </motion.div>
+                    <motion.div {...fadeUp} className="text-sm text-text-secondary">
+                        <p>Surface risk signals, trends, and recommendations powered by spatial and document analysis.</p>
+                    </motion.div>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                        {[
+                            {
+                                title: 'The Future of Spatial Title Intelligence',
+                                body: 'How parcels, imagery, and LLMs reshape title search and examination.',
+                            },
+                            {
+                                title: 'Why Lot Coverage Matters',
+                                body: 'Understanding buildable area, encumbrances, and climate-aware density.',
+                            },
+                            {
+                                title: 'Climate Risk and Underwriting',
+                                body: 'Moving from map screenshots to quantified spatial risk in your binder.',
+                            },
+                        ].map((post) => (
+                            <motion.article
+                                key={post.title}
+                                {...fadeUp}
+                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
+                            >
+                                <div className="text-xs font-semibold text-text-primary">{post.title}</div>
+                                <p className="text-xs text-text-secondary">{post.body}</p>
+                                <span className="mt-1 text-[11px] text-primary">Read overview →</span>
+                            </motion.article>
+                        ))}
+                    </div>
+                </section>
+
                 {/* Metrics */}
                 <section id={sectionIds.metrics} className="space-y-4">
                     <motion.div {...fadeUp}>
@@ -753,49 +793,10 @@ function App() {
                     </motion.div>
                 </section>
 
-                {/* Blog */}
-                <section id={sectionIds.blog} className="space-y-6">
-                    <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                            Insights
-                        </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
-                            Spatial intelligence for modern title operations.
-                        </p>
-                    </motion.div>
-
-                    <div className="grid gap-4 md:grid-cols-3">
-                        {[
-                            {
-                                title: 'The Future of Spatial Title Intelligence',
-                                body: 'How parcels, imagery, and LLMs reshape title search and examination.',
-                            },
-                            {
-                                title: 'Why Lot Coverage Matters',
-                                body: 'Understanding buildable area, encumbrances, and climate-aware density.',
-                            },
-                            {
-                                title: 'Climate Risk and Underwriting',
-                                body: 'Moving from map screenshots to quantified spatial risk in your binder.',
-                            },
-                        ].map((post) => (
-                            <motion.article
-                                key={post.title}
-                                {...fadeUp}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
-                            >
-                                <div className="text-xs font-semibold text-text-primary">{post.title}</div>
-                                <p className="text-xs text-text-secondary">{post.body}</p>
-                                <span className="mt-1 text-[11px] text-primary">Read overview →</span>
-                            </motion.article>
-                        ))}
-                    </div>
-                </section>
-
                 {/* No demo form — the experience starts directly with an address. */}
                 <section
                     id={sectionIds.demo}
-                    className="space-y-4 rounded-2xl border border-dashed border-white/10 bg-black/30 p-5 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
+                    className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
                 >
                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                         Open Access
