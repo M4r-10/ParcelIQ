@@ -148,11 +148,3 @@ npm run dev
 | AI | OpenAI GPT-4 API |
 | Data | GeoJSON, Shapely |
 | DevOps | Docker, Docker Compose |
-
-## 📝 TODO
-
-Search the codebase for `# TODO` and `// TODO` to find all implementation stubs.
-
----
-
-*TitleGuard AI — Infrastructure intelligence, not loan automation.*
