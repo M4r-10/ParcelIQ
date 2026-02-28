@@ -45,6 +45,7 @@ function App() {
     const [error, setError] = useState(null);
     const [currentAddress, setCurrentAddress] = useState('');
     const [addressInput, setAddressInput] = useState('');
+    const [pendingLocation, setPendingLocation] = useState(null);
     const pageRef = useRef(null);
     const { scrollYProgress } = useScroll({ target: pageRef, offset: ['start 0', 'end 1'] });
     const progressWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
@@ -98,6 +99,7 @@ function App() {
         setAnalysisResult(null);
         setError(null);
         setIsLoading(false);
+        setPendingLocation(null);
     }, []);
 
     return (
@@ -120,6 +122,7 @@ function App() {
                         analysisResult={analysisResult}
                         isLoading={isLoading}
                         address={currentAddress}
+                        initialLocation={pendingLocation}
                         onBack={handleBackToLanding}
                     />
                 </main>
@@ -160,6 +163,7 @@ function App() {
                                     value={addressInput}
                                     onChange={setAddressInput}
                                     onSelect={(suggestion) => {
+                                        setPendingLocation({ lat: suggestion.lat, lng: suggestion.lng });
                                         handleAnalyze(suggestion.shortName);
                                     }}
                                     disabled={isLoading}
@@ -192,6 +196,7 @@ function App() {
                                             type="button"
                                             onClick={() => {
                                                 setAddressInput(sample);
+                                                setPendingLocation(null);
                                                 handleAnalyze(sample);
                                             }}
                                             disabled={isLoading}
