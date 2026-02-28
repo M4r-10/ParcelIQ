@@ -8,7 +8,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 
-function SpatialVisualizer({ analysisResult, activeLayers }) {
+function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, address }) {
     const mapContainerRef = useRef(null);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
@@ -81,11 +81,27 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
         };
     }, [token]);
 
-    // ── Update data on new analysis ──
+    // ── Pre-flight to initial location (quick pan while backend loads) ──
+    useEffect(() => {
+        if (!mapRef.current || !mapReady || !initialLocation) return;
+
+        flyingRef.current = true;
+        mapRef.current.flyTo({
+            center: [initialLocation.lng, initialLocation.lat],
+            zoom: 17, pitch: 55, bearing: -25, duration: 2000,
+        });
+        mapRef.current.once('moveend', () => {
+            flyingRef.current = false;
+        });
+    }, [initialLocation, mapReady]);
+
+    // ── Update data on new analysis (uses backend's authoritative geocode) ──
     useEffect(() => {
         if (!mapRef.current || !mapReady || !analysisResult) return;
         const map = mapRef.current;
-        const { location, parcel, building, layers, address } = analysisResult;
+        const { location, parcel, building, layers, address: resultAddress } = analysisResult;
+
+        const displayAddress = address || resultAddress || 'Target Property';
 
         // Remove old marker
         if (markerRef.current) {
@@ -94,10 +110,12 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
         }
 
         if (location) {
+            const coords = [location.lng, location.lat];
+
             // Pause auto-rotate and fly to the property
             flyingRef.current = true;
             map.flyTo({
-                center: [location.lng, location.lat],
+                center: coords,
                 zoom: 18, pitch: 55, bearing: -25, duration: 2500,
             });
             // Resume auto-rotation after flyTo completes
@@ -105,67 +123,58 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
                 flyingRef.current = false;
             });
 
-            // Create custom marker element (pulsing pin)
+            // Create custom marker element (beautiful gradient pin)
             const el = document.createElement('div');
+            el.className = 'target-marker';
             el.innerHTML = `
-                <div style="position:relative;display:flex;align-items:center;justify-content:center;">
-                    <div style="
-                        width:20px;height:20px;border-radius:50%;
-                        background:radial-gradient(circle, #60a5fa 0%, #3b82f6 70%);
-                        border:3px solid #ffffff;
-                        box-shadow:0 0 12px rgba(59,130,246,0.6), 0 2px 8px rgba(0,0,0,0.4);
-                        z-index:2;
-                    "></div>
-                    <div style="
-                        position:absolute;width:40px;height:40px;border-radius:50%;
-                        background:rgba(59,130,246,0.25);
-                        animation:pulse-ring 2s ease-out infinite;
-                    "></div>
+                <div style="
+                    background: linear-gradient(135deg, #2563eb, #7c3aed);
+                    color: white;
+                    padding: 6px 12px;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    white-space: nowrap;
+                    box-shadow: 0 4px 20px rgba(37,99,235,0.5);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    pointer-events: none;
+                ">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:14px;">📍</span>
+                        <span>${displayAddress}</span>
+                    </div>
                 </div>
+                <div style="
+                    width: 2px; height: 30px;
+                    background: linear-gradient(to bottom, #2563eb, transparent);
+                    margin: 0 auto;
+                "></div>
+                <div style="
+                    width: 8px; height: 8px;
+                    background: #2563eb;
+                    border-radius: 50%;
+                    margin: 0 auto;
+                    box-shadow: 0 0 12px 4px rgba(37,99,235,0.6);
+                    animation: pulse-ring 2s ease-out infinite;
+                "></div>
                 <style>
                     @keyframes pulse-ring {
-                        0% { transform:scale(0.5); opacity:1; }
-                        100% { transform:scale(2); opacity:0; }
+                        0% { transform:scale(0.8); box-shadow: 0 0 0 0 rgba(37,99,235,0.6); }
+                        70% { transform:scale(1.2); box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+                        100% { transform:scale(0.8); box-shadow: 0 0 0 0 rgba(37,99,235,0); }
                     }
                 </style>
             `;
 
-            // Popup with address
-            const popup = new mapboxgl.Popup({
-                offset: 18,
-                closeButton: false,
-                closeOnClick: false,
-                className: 'parceliq-popup',
-            }).setHTML(`
-                <div style="
-                    background:rgba(15,23,42,0.92);
-                    backdrop-filter:blur(12px);
-                    border:1px solid rgba(255,255,255,0.1);
-                    border-radius:8px;
-                    padding:8px 14px;
-                    color:#e2e8f0;
-                    font-family:Inter,system-ui,sans-serif;
-                    font-size:12px;
-                    font-weight:500;
-                    max-width:260px;
-                    line-height:1.4;
-                    box-shadow:0 8px 24px rgba(0,0,0,0.4);
-                ">
-                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:4px;">
-                        📍 Analyzed Property
-                    </div>
-                    ${address || 'Property location'}
-                </div>
-            `);
-
-            const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-                .setLngLat([location.lng, location.lat])
-                .setPopup(popup)
+            markerRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+                .setLngLat(coords)
                 .addTo(map);
 
-            // Show popup immediately
-            marker.togglePopup();
-            markerRef.current = marker;
+            // Highlight the building at this location after the flyTo completes
+            setTimeout(() => {
+                if (!mapRef.current) return;
+                highlightBuildingAt(map, coords);
+            }, 2600);
         }
 
         // Update building footprint source if we have it
@@ -192,7 +201,7 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
             const src = map.getSource('easement');
             if (src) src.setData({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: layers.easements.geometry, properties: {} }] });
         }
-    }, [analysisResult, mapReady]);
+    }, [analysisResult, mapReady, address]);
 
     // ── Toggle layer visibility ──
     useEffect(() => {
@@ -263,9 +272,29 @@ function addSources(map) {
     map.addSource('buildable', { type: 'geojson', data: empty });
     map.addSource('encumbered', { type: 'geojson', data: empty });
     map.addSource('footprint', { type: 'geojson', data: empty });
+    map.addSource('highlight-building', { type: 'geojson', data: empty });
 }
 
 function addLayers(map) {
+    // Standard mapbox 3D buildings
+    map.addLayer(
+        {
+            'id': '3d-buildings',
+            'source': 'composite',
+            'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
+            'type': 'fill-extrusion',
+            'minzoom': 14,
+            'paint': {
+                'fill-extrusion-color': '#2a2a35',
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': ['get', 'min_height'],
+                'fill-extrusion-opacity': 0.8
+            }
+        },
+        // Insert it below our custom layers if we want, but standard is just add at the end
+    );
+
     map.addLayer({ id: 'parcel-extrusion', type: 'fill-extrusion', source: 'parcel', paint: { 'fill-extrusion-color': '#ffffff', 'fill-extrusion-height': 3, 'fill-extrusion-opacity': 0.15 } });
     map.addLayer({ id: 'parcel-outline', type: 'line', source: 'parcel', paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.6 } });
     map.addLayer({ id: 'flood-zone-fill', type: 'fill-extrusion', source: 'flood-zone', layout: { visibility: 'none' }, paint: { 'fill-extrusion-color': '#3b82f6', 'fill-extrusion-height': 5, 'fill-extrusion-opacity': 0.35 } });
@@ -273,6 +302,54 @@ function addLayers(map) {
     map.addLayer({ id: 'buildable-fill', type: 'fill', source: 'buildable', layout: { visibility: 'none' }, paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.2 } });
     map.addLayer({ id: 'encumbered-fill', type: 'fill', source: 'encumbered', layout: { visibility: 'none' }, paint: { 'fill-color': '#991b1b', 'fill-opacity': 0.4 } });
     map.addLayer({ id: 'footprint-fill', type: 'fill-extrusion', source: 'footprint', layout: { visibility: 'none' }, paint: { 'fill-extrusion-color': '#ffffff', 'fill-extrusion-height': 8, 'fill-extrusion-opacity': 0.5 } });
+
+    // Highlighted target building layer (bright cyan glow)
+    map.addLayer({
+        id: 'highlight-building-fill',
+        type: 'fill-extrusion',
+        source: 'highlight-building',
+        paint: {
+            'fill-extrusion-color': '#38bdf8',
+            'fill-extrusion-height': ['coalesce', ['get', 'height'], 12],
+            'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
+            'fill-extrusion-opacity': 0.85,
+        },
+    });
+}
+
+/**
+ * Query the 3D building layer at the given coordinates and
+ * copy the matched building geometry into the highlight source.
+ */
+function highlightBuildingAt(map, lngLat) {
+    try {
+        const point = map.project(lngLat);
+        // Query in a small box around the point to catch the building
+        const bbox = [
+            [point.x - 5, point.y - 5],
+            [point.x + 5, point.y + 5],
+        ];
+        const features = map.queryRenderedFeatures(bbox, { layers: ['3d-buildings'] });
+
+        const src = map.getSource('highlight-building');
+        if (features.length > 0 && src) {
+            // Take the first (closest) building feature
+            const building = features[0];
+            src.setData({
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    geometry: building.geometry,
+                    properties: building.properties || {},
+                }],
+            });
+        } else if (src) {
+            // No building found — clear the highlight
+            src.setData({ type: 'FeatureCollection', features: [] });
+        }
+    } catch (err) {
+        console.warn('Could not highlight building:', err);
+    }
 }
 
 export default SpatialVisualizer;
