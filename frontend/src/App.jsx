@@ -83,7 +83,7 @@ function App() {
                 console.error('Analysis failed:', err);
                 setError(
                     err.response?.data?.error ||
-                        'Unable to reach the analysis server. Make sure the backend is running on port 5000.',
+                        'Unable to reach the analysis server. Make sure the backend is running.',
                 );
             } finally {
                 setIsLoading(false);

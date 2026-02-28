@@ -93,7 +93,7 @@ def reverse_geocode(lat: float, lng: float) -> dict:
     }
 
 
-def fetch_parcel_boundary(lat: float, lng: float, radius_meters: float = 20) -> dict:
+def fetch_parcel_boundary(lat: float, lng: float, radius_meters: float = 50) -> dict:
     """
     Calculates an approximate property bounding box.
     In environments without a real municipal GIS or paid boundary API, we calculate 

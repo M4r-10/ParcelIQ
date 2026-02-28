@@ -400,10 +400,10 @@ def _train_models():
         subsample=0.8,
         random_state=42
     )
-    _model.fit(X_scaled, y)
+    _model.fit(X_scaled, Y)
 
     _delay_model = LogisticRegression(max_iter=500, random_state=42)
-    _delay_model.fit(X_scaled, y)
+    _delay_model.fit(X_scaled, Y)
 
     _MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(_model, gbm_path)
