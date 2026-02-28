@@ -99,7 +99,10 @@ FACTOR BREAKDOWN:
 """
 
     for key, factor in factors.items():
-        score = factor.get("score", 0)
+        if factor.get("unavailable"):
+            prompt += f"- {key}: DATA UNAVAILABLE\n"
+            continue
+        score = factor.get("score", 0) or 0
         weight = factor.get("weight", 0)
         prompt += f"- {key}: score={score:.3f} (weight={weight})\n"
 

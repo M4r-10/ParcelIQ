@@ -23,6 +23,9 @@ class Config:
     # Mapbox
     MAPBOX_TOKEN = os.getenv("MAPBOX_TOKEN", "")
 
+    # Melissa Property Data
+    MELISSA_API_KEY = os.getenv("MELISSA_API_KEY", "")
+
     # Risk scoring weights
     WEIGHT_FLOOD = 0.30
     WEIGHT_EASEMENT = 0.25

@@ -141,6 +141,35 @@ function RiskScoreCard({ riskData, coverageData, isLoading, score }) {
                 </div>
                 <div className="flex flex-col gap-5">
                     {factors && Object.entries(factors).map(([key, factor], idx) => {
+                        // ── Unavailable factor ──
+                        if (factor.unavailable) {
+                            return (
+                                <motion.div
+                                    key={key}
+                                    initial={{ opacity: 0, x: -8 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.35, delay: 0.08 * idx }}
+                                    className="group rounded-lg border border-dashed border-white/10 px-4 py-3"
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-xs font-semibold text-text-secondary/60">
+                                            {factor.label || key}
+                                        </span>
+                                        <span
+                                            className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                                            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' }}
+                                        >
+                                            Unavailable
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-text-secondary/40">
+                                        No verified data source available for this property
+                                    </p>
+                                </motion.div>
+                            );
+                        }
+
+                        // ── Normal factor ──
                         const barColor = getScoreColor(factor.score);
                         const severityStyle = getSeverityStyle(factor.severity);
 

@@ -16,6 +16,8 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
 
     const token = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
+    const [webglError, setWebglError] = useState(false);
+
     // ── Initialize map ──
     useEffect(() => {
         if (!token) {
@@ -23,17 +25,31 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
             return;
         }
 
+        // Check WebGL support before trying to create the map
+        if (!mapboxgl.supported()) {
+            setWebglError(true);
+            return;
+        }
+
         mapboxgl.accessToken = token;
 
-        const map = new mapboxgl.Map({
-            container: mapContainerRef.current,
-            style: 'mapbox://styles/mapbox/dark-v11',
-            center: [-117.8265, 33.6846],
-            zoom: 17,
-            pitch: 55,
-            bearing: -25,
-            antialias: true,
-        });
+        let map;
+        try {
+            map = new mapboxgl.Map({
+                container: mapContainerRef.current,
+                style: 'mapbox://styles/mapbox/dark-v11',
+                center: [-117.8265, 33.6846],
+                zoom: 17,
+                pitch: 55,
+                bearing: -25,
+                antialias: true,
+                failIfMajorPerformanceCaveat: false,
+            });
+        } catch (e) {
+            console.warn('Mapbox GL failed to initialize:', e.message);
+            setWebglError(true);
+            return;
+        }
 
         map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'bottom-right');
 
@@ -122,6 +138,21 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
                 </p>
                 <span className="rounded-md bg-white/[0.03] px-3 py-1 font-mono text-[10px] text-text-secondary">
                     Set VITE_MAPBOX_TOKEN in .env
+                </span>
+            </div>
+        );
+    }
+
+    // ── Fallback when WebGL is unavailable ──
+    if (webglError) {
+        return (
+            <div ref={mapContainerRef} className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.02),_transparent_70%)] bg-background-subtle">
+                <div className="text-5xl opacity-30">🗺️</div>
+                <p className="max-w-[280px] text-center text-sm text-text-secondary">
+                    3D Spatial Viewer requires WebGL
+                </p>
+                <span className="rounded-md bg-white/[0.03] px-3 py-1 font-mono text-[10px] text-text-secondary">
+                    Enable hardware acceleration in your browser settings
                 </span>
             </div>
         );
