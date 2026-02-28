@@ -74,7 +74,6 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
         map.on('load', () => { rotate(); });
 
         return () => {
-            cancelAnimationFrame(frame);
             map.remove();
             mapRef.current = null;
             setMapReady(false);

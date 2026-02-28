@@ -1,49 +1,111 @@
+"""
+Test script for the CV Coverage pipeline.
+
+Full end-to-end: geocode -> building footprint -> parcel boundary ->
+satellite image (bbox-cropped) -> CV segmentation -> coverage result
+"""
 import os
 import sys
 
-# Add backend dir to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"))
+
+from services.satellite_client import fetch_satellite_image, compute_building_bearing
 from services.cv_coverage import estimate_lot_coverage
-from data.mock_data import SAMPLE_PARCELS
+from services.geocoding import geocode_address, fetch_parcel_boundary, fetch_building_footprint
+
+# ---------------------------------------------------------------
+TEST_ADDRESS = "54 Turnbury Lane, Irvine, CA 92620"
+# ---------------------------------------------------------------
+
+def main():
+    print("\n" + "=" * 60)
+    print("  [CV] Parcel-Bounded Satellite + Lot Coverage Test")
+    print("=" * 60)
+    print(f"  Address: {TEST_ADDRESS}")
+    print("-" * 60)
+
+    # 1. Geocode
+    print("\n  [1/5] Geocoding address ...")
+    try:
+        location = geocode_address(TEST_ADDRESS)
+        lat, lng = location["lat"], location["lng"]
+        print(f"         Lat: {lat:.6f}   Lng: {lng:.6f}")
+    except Exception as e:
+        print(f"         FAILED: {e}")
+        return
+
+    # 2. Fetch parcel boundary
+    print("\n  [2/5] Fetching parcel boundary ...")
+    parcel = fetch_parcel_boundary(lat, lng)
+    if parcel and "geometry" in parcel:
+        coords = parcel["geometry"].get("coordinates", [[]])[0]
+        print(f"         Parcel polygon: {len(coords)} vertices")
+    else:
+        print("         No parcel found (will use estimated boundary)")
+        parcel = {}
+
+    # 3. Fetch building footprint + compute bearing
+    print("\n  [3/5] Fetching building footprint ...")
+    building = fetch_building_footprint(lat, lng)
+    bearing = 0.0
+    if building:
+        bearing = compute_building_bearing(building)
+        print(f"         Building found, bearing: {bearing:.0f} deg")
+    else:
+        print("         No building footprint (bearing: 0 deg)")
+
+    # 4. Fetch satellite image (bbox-cropped to parcel)
+    print("\n  [4/5] Fetching satellite image (parcel-bounded) ...")
+    sat_path = fetch_satellite_image(
+        lat, lng,
+        parcel_geojson=parcel if parcel else None,
+        bearing=bearing,
+        address=TEST_ADDRESS,
+    )
+    if sat_path:
+        size_kb = os.path.getsize(sat_path) / 1024
+        print(f"         Saved: {sat_path}")
+        print(f"         Size:  {size_kb:.0f} KB")
+    else:
+        print("         FAILED -- falling back to mock")
+        _print_result(estimate_lot_coverage({}), is_mock=True)
+        return
+
+    # 5. Run CV coverage (with parcel masking)
+    print("\n  [5/5] Running CV segmentation (parcel-masked) ...")
+    result = estimate_lot_coverage(
+        parcel if parcel else {},
+        satellite_image_path=sat_path,
+    )
+    _print_result(result)
+
+    # Show debug image location
+    if result.get("debug_image_url"):
+        debug_name = os.path.basename(result["debug_image_url"])
+        debug_path = os.path.join(os.path.dirname(sat_path), debug_name)
+        if os.path.exists(debug_path):
+            print(f"\n  Debug image: {debug_path}")
+
+    print("\n" + "=" * 60 + "\n")
 
 
-# We need to find the location of the satellite mock image
-frontend_img_path = r"C:\Users\12096\.gemini\antigravity\brain\d8707fdf-d5d2-4e6c-9cfc-e903faa54a6e\satellite_test_image_1772300071699.png"
+def _print_result(result, is_mock=False):
+    label = " (MOCK)" if is_mock else ""
+    print("\n" + "=" * 60)
+    print(f"  [CV] Lot Coverage Results{label}")
+    print("=" * 60)
+    print(f"  Lot Coverage:    {result['lot_coverage_pct'] * 100:.1f}%")
+    print(f"  Building Area:   {result['building_area_sqft']:,.1f} sq ft")
+    print(f"  Parcel Area:     {result['parcel_area_sqft']:,.1f} sq ft")
+    print(f"  Zoning Max:      {result['zoning_max_coverage'] * 100:.0f}%")
+    print(f"  Expansion Risk:  {result['expansion_risk']}")
+    print(f"  Confidence:      {result['confidence'] * 100:.0f}%")
+    print(f"  Method:          {result['method']}")
+    print("=" * 60)
 
-# If it exists, let's run the algorithm on it
-if os.path.exists(frontend_img_path):
-    print(f"Testing real CV logic against {frontend_img_path}")
-    geo = SAMPLE_PARCELS.get("123 Main St, Irvine, CA 92618", {})
-    if not geo:
-        geo = list(SAMPLE_PARCELS.values())[0]
 
-    res = estimate_lot_coverage(geo, frontend_img_path)
-    
-    print("\n" + "="*50)
-    print(" [CV] Computer Vision Lot Coverage Analysis")
-    print("="*50)
-    print(f"  Lot Coverage:         {res['lot_coverage_pct']*100:.1f}%")
-    print(f"  Building Area:        {res['building_area_sqft']:,.1f} sq ft")
-    print(f"  Parcel Area:          {res['parcel_area_sqft']:,.1f} sq ft")
-    print(f"  Zoning Max:           {res['zoning_max_coverage']*100:.1f}%")
-    print(f"  Expansion Risk:       {res['expansion_risk']}")
-    print(f"  CV Confidence:        {res['confidence']*100:.1f}%")
-    if 'debug_image_url' in res:
-        print(f"  Output Image:         {res['debug_image_url']}")
-    print("="*50 + "\n")
-else:
-    print(f"Could not find test image at {frontend_img_path}. Only tests mock data.")
-    print("Testing mock data fallback...")
-    res = estimate_lot_coverage({}, None)
-    
-    print("\n" + "="*50)
-    print(" [CV] Computer Vision Lot Coverage Analysis (MOCK)")
-    print("="*50)
-    print(f"  Lot Coverage:         {res['lot_coverage_pct']*100:.1f}%")
-    print(f"  Building Area:        {res['building_area_sqft']:,.1f} sq ft")
-    print(f"  Parcel Area:          {res['parcel_area_sqft']:,.1f} sq ft")
-    print(f"  Zoning Max:           {res['zoning_max_coverage']*100:.1f}%")
-    print(f"  Expansion Risk:       {res['expansion_risk']}")
-    print(f"  CV Confidence:        {res['confidence']*100:.1f}%")
-    print("="*50 + "\n")
+if __name__ == "__main__":
+    main()
