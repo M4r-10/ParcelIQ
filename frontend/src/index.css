@@ -45,3 +45,14 @@ section[id] {
   opacity: 0.65;
   z-index: -1;
 }
+
+/* Mapbox popup overrides — use our custom-styled content */
+.parceliq-popup .mapboxgl-popup-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.parceliq-popup .mapboxgl-popup-tip {
+  display: none !important;
+}

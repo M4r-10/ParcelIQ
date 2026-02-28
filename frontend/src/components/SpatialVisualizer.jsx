@@ -12,6 +12,7 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
     const mapContainerRef = useRef(null);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
+    const flyingRef = useRef(false);
     const [mapReady, setMapReady] = useState(false);
     const [noToken, setNoToken] = useState(false);
 
@@ -40,9 +41,9 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
                 container: mapContainerRef.current,
                 style: 'mapbox://styles/mapbox/dark-v11',
                 center: [-117.8265, 33.6846],
-                zoom: 17,
-                pitch: 55,
-                bearing: -25,
+                zoom: 12,
+                pitch: 45,
+                bearing: -15,
                 antialias: true,
                 failIfMajorPerformanceCaveat: false,
             });
@@ -61,6 +62,17 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
             addLayers(map);
         });
 
+        // Slow auto-rotate (paused during flyTo)
+        let frame;
+        const rotate = () => {
+            if (mapRef.current && !flyingRef.current) {
+                mapRef.current.rotateTo((mapRef.current.getBearing() + 0.05) % 360, { duration: 0 });
+            }
+            frame = requestAnimationFrame(rotate);
+        };
+
+        map.on('load', () => { rotate(); });
+
         return () => {
             map.remove();
             mapRef.current = null;
@@ -72,9 +84,13 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
     useEffect(() => {
         if (!mapRef.current || !mapReady || !initialLocation) return;
 
+        flyingRef.current = true;
         mapRef.current.flyTo({
             center: [initialLocation.lng, initialLocation.lat],
             zoom: 17, pitch: 55, bearing: -25, duration: 2000,
+        });
+        mapRef.current.once('moveend', () => {
+            flyingRef.current = false;
         });
     }, [initialLocation, mapReady]);
 
@@ -82,20 +98,31 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
     useEffect(() => {
         if (!mapRef.current || !mapReady || !analysisResult) return;
         const map = mapRef.current;
-        const { location, parcel, layers } = analysisResult;
+        const { location, parcel, building, layers, address: resultAddress } = analysisResult;
+
+        const displayAddress = address || resultAddress || 'Target Property';
+
+        // Remove old marker
+        if (markerRef.current) {
+            markerRef.current.remove();
+            markerRef.current = null;
+        }
 
         if (location) {
             const coords = [location.lng, location.lat];
 
-            // Fly to the backend-geocoded location
+            // Pause auto-rotate and fly to the property
+            flyingRef.current = true;
             map.flyTo({
                 center: coords,
-                zoom: 17, pitch: 55, bearing: -25, duration: 2000,
+                zoom: 18, pitch: 55, bearing: -25, duration: 2500,
+            });
+            // Resume auto-rotation after flyTo completes
+            map.once('moveend', () => {
+                flyingRef.current = false;
             });
 
-            // Place address marker at the precise backend coordinates
-            if (markerRef.current) markerRef.current.remove();
-
+            // Create custom marker element (beautiful gradient pin)
             const el = document.createElement('div');
             el.className = 'target-marker';
             el.innerHTML = `
@@ -112,8 +139,8 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
                     pointer-events: none;
                 ">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:14px;">&#x1F4CD;</span>
-                        <span>${address || analysisResult.address || 'Target Property'}</span>
+                        <span style="font-size:14px;">📍</span>
+                        <span>${displayAddress}</span>
                     </div>
                 </div>
                 <div style="
@@ -127,7 +154,15 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
                     border-radius: 50%;
                     margin: 0 auto;
                     box-shadow: 0 0 12px 4px rgba(37,99,235,0.6);
+                    animation: pulse-ring 2s ease-out infinite;
                 "></div>
+                <style>
+                    @keyframes pulse-ring {
+                        0% { transform:scale(0.8); box-shadow: 0 0 0 0 rgba(37,99,235,0.6); }
+                        70% { transform:scale(1.2); box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+                        100% { transform:scale(0.8); box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+                    }
+                </style>
             `;
 
             markerRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
@@ -138,7 +173,17 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
             setTimeout(() => {
                 if (!mapRef.current) return;
                 highlightBuildingAt(map, coords);
-            }, 2200);
+            }, 2600);
+        }
+
+        // Update building footprint source if we have it
+        if (building?.geometry) {
+            const src = map.getSource('footprint');
+            if (src) src.setData({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: building.geometry, properties: {} }] });
+            // Auto-show the building footprint layer
+            if (map.getLayer('footprint-fill')) {
+                map.setLayoutProperty('footprint-fill', 'visibility', 'visible');
+            }
         }
 
         if (parcel) {
