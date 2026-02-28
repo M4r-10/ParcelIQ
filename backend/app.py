@@ -15,6 +15,7 @@ from flask_cors import CORS
 from config import Config
 from services.risk_scoring import compute_risk_score, get_risk_tier
 from services.cv_coverage import estimate_lot_coverage
+from services.satellite_client import fetch_satellite_image
 from services.ai_summary import generate_risk_summary
 from services.geocoding import geocode_address, fetch_parcel_boundary, fetch_building_footprint
 from services.fema_client import query_flood_zone
@@ -71,6 +72,25 @@ def analyze_property():
     # ------------------------------------------------------------------
     parcel = fetch_parcel_boundary(lat, lng)
     building = fetch_building_footprint(lat, lng)
+
+    # ------------------------------------------------------------------
+    # Step 2.5: Fetch satellite image for CV coverage analysis
+    # ------------------------------------------------------------------
+    satellite_path = fetch_satellite_image(lat, lng, parcel_geojson=parcel, address=address)
+
+    # Run CV-based lot coverage on the satellite image
+    cv_result = None
+    if satellite_path:
+        try:
+            cv_result = estimate_lot_coverage(
+                parcel or {},
+                satellite_image_path=satellite_path,
+            )
+        except Exception as e:
+            print(f"[app] CV coverage failed: {e}")
+            cv_result = estimate_lot_coverage({})  # fallback to mock
+    else:
+        cv_result = estimate_lot_coverage({})  # fallback to mock
 
     # Compute lot coverage geometrically from building vs parcel area
     coverage_result = _compute_geometric_coverage(parcel, building)
@@ -156,6 +176,7 @@ def analyze_property():
         "parcel": parcel,
         "building": building,
         "coverage": coverage_result,
+        "cv_coverage": cv_result,
         "risk": risk_result,
         "ai_summary": summary_result,
         "flood_data": flood_data,
