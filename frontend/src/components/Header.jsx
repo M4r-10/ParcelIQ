@@ -5,12 +5,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const navItems = [
+    { id: 'hero', label: 'Home' },
     { id: 'product', label: 'Product' },
-    { id: 'spatial-risk', label: 'Spatial Risk' },
-    { id: 'ai-engine', label: 'AI Engine' },
     { id: 'about', label: 'About' },
-    { id: 'security', label: 'Security' },
-    { id: 'blog', label: 'Blog' },
 ];
 
 function Header({ onLogoClick, onScrollToSection }) {
@@ -21,13 +18,18 @@ function Header({ onLogoClick, onScrollToSection }) {
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="fixed inset-x-0 top-0 z-40 border-b border-white/5 bg-background/40 backdrop-blur-2xl"
         >
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 lg:px-8">
+            <div className="mx-auto flex max-w-6xl items-center justify-between py-4 pl-4 pr-6 lg:pl-5 lg:pr-8">
                 <button
                     onClick={onLogoClick}
                     className="group flex items-center gap-3 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-left shadow-sm transition hover:border-primary/60 hover:bg-white/10"
                 >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-flood text-sm font-bold text-slate-900 shadow-glow">
-                        TG
+                    <div className="mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-full">
+                        <img
+                            src="/logo.png"
+                            alt="ParcelIQ"
+                            className="h-full w-full scale-[1.35] object-cover"
+                            style={{ objectPosition: '50% 50%' }}
+                        />
                     </div>
                     <div>
                         <div className="text-sm font-semibold tracking-tight text-text-primary">
@@ -51,14 +53,6 @@ function Header({ onLogoClick, onScrollToSection }) {
                         </button>
                     ))}
 
-                    <motion.button
-                        whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(59, 130, 246, 0.55)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => onScrollToSection?.('demo')}
-                        className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-primary-flood"
-                    >
-                        Request Demo
-                    </motion.button>
                 </nav>
             </div>
         </motion.header>
