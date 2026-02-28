@@ -24,13 +24,13 @@ function PropertyDashboard({ analysisResult, isLoading, address, onBack }) {
     }, []);
 
     return (
-        <div className="flex min-h-[calc(100vh-5rem)] flex-col">
-            {/* Toolbar */}
+        <div className="flex min-h-[calc(100vh-6rem)] flex-col">
+            {/* Toolbar — section right below header */}
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="flex items-center justify-between border-b border-white/5 bg-background-subtle px-6 py-3"
+                className="flex shrink-0 items-center justify-between gap-4 border-b border-white/5 bg-background-subtle px-6 py-4"
             >
                 <div className="flex items-center gap-3">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
@@ -59,8 +59,8 @@ function PropertyDashboard({ analysisResult, isLoading, address, onBack }) {
                 </button>
             </motion.div>
 
-            {/* Main */}
-            <div className="flex flex-1 overflow-hidden max-md:flex-col">
+            {/* Main: map + sidebar */}
+            <div className="flex min-h-0 flex-1 overflow-hidden max-md:flex-col">
                 {/* Map Area */}
                 <div className="relative flex-1 bg-background-subtle">
                     <SpatialVisualizer

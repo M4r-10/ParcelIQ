@@ -5,7 +5,7 @@
  *   1. Home — hero address input
  *   2. Dashboard — spatial viewer + risk analysis
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import CountUp from 'react-countup';
 import Header from './components/Header';
@@ -30,6 +30,14 @@ const sectionIds = {
     demo: 'demo',
 };
 
+// Mock address suggestions for hero command-bar dropdown
+const ADDRESS_SUGGESTIONS = [
+    { address: '123 Main St, Irvine, CA 92618', county: 'Orange County', state: 'CA' },
+    { address: '456 Oak Ave, Irvine, CA 92620', county: 'Orange County', state: 'CA' },
+    { address: '789 Pine Rd, Los Angeles, CA 90001', county: 'Los Angeles County', state: 'CA' },
+    { address: '100 Commerce St, Austin, TX 78701', county: 'Travis County', state: 'TX' },
+];
+
 const fadeUp = {
     initial: { opacity: 0, y: 24 },
     whileInView: { opacity: 1, y: 0 },
@@ -46,6 +54,10 @@ function App() {
     const [error, setError] = useState(null);
     const [currentAddress, setCurrentAddress] = useState('');
     const [addressInput, setAddressInput] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [inputFocused, setInputFocused] = useState(false);
+    const [insightFlippedIndex, setInsightFlippedIndex] = useState(null);
+    const searchContainerRef = useRef(null);
     const pageRef = useRef(null);
     const { scrollYProgress } = useScroll({ target: pageRef, offset: ['start 0', 'end 1'] });
     const progressWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
@@ -70,6 +82,19 @@ function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, [mode]);
+
+    const handleHomeClick = useCallback(() => {
+        if (mode === 'experience') {
+            setMode('landing');
+            setAnalysisResult(null);
+            setError(null);
+            setIsLoading(false);
+            setCurrentAddress('');
+            setAddressInput('');
+        } else {
+            handleScrollToSection('hero');
+        }
+    }, [mode, handleScrollToSection]);
 
     const handleAnalyze = useCallback(
         async (address) => {
@@ -101,6 +126,21 @@ function App() {
         setIsLoading(false);
     }, []);
 
+    // Close address dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredSuggestions = ADDRESS_SUGGESTIONS.filter((s) =>
+        s.address.toLowerCase().includes(addressInput.trim().toLowerCase())
+    );
+
     return (
         <div
             ref={pageRef}
@@ -113,10 +153,10 @@ function App() {
 
             <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.35),_transparent_60%),radial-gradient(circle_at_bottom,_rgba(15,23,42,0.85),_rgba(15,23,42,1))]" />
 
-            <Header onLogoClick={handleLogoClick} onScrollToSection={handleScrollToSection} />
+            <Header onLogoClick={handleLogoClick} onHomeClick={handleHomeClick} onScrollToSection={handleScrollToSection} />
 
             {mode === 'experience' ? (
-                <main className="pt-20">
+                <main className="pt-24">
                     <PropertyDashboard
                         analysisResult={analysisResult}
                         isLoading={isLoading}
@@ -125,7 +165,7 @@ function App() {
                     />
                 </main>
             ) : (
-                <main className="mx-auto mt-24 flex max-w-6xl flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
+                <main className="mx-auto mt-24 flex w-full max-w-full flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
                 {/* Hero */}
                 <section id={sectionIds.hero} className="grid gap-10 lg:grid-cols-2 lg:items-center">
                     <motion.div
@@ -137,8 +177,10 @@ function App() {
                             Spatial Property Risk Intelligence Engine
                         </div>
                         <div className="space-y-4">
-                            <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[3.1rem]">
-                                Eliminate Underwriting Blindspots with Instant Spatial Intelligence.
+                            <h1 className="bg-gradient-to-r from-sky-300 via-primary to-blue-400 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-5xl lg:text-[3.1rem]">
+                                See Every
+                                <br />
+                                Parcel Clearly
                             </h1>
                             <p className="max-w-xl text-sm leading-relaxed text-text-secondary">
                                 Enter an address to generate an AI-powered spatial risk view — open for underwriters,
@@ -146,34 +188,87 @@ function App() {
                             </p>
                         </div>
                         <div className="space-y-3">
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleAnalyze(addressInput);
-                                }}
-                                className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 shadow-card-soft transition hover:border-primary/50 hover:shadow-glow sm:flex-row sm:items-center"
-                            >
-                                <div className="flex flex-1 items-center gap-2 px-2">
-                                    <span className="text-lg">📍</span>
-                                    <input
-                                        type="text"
-                                        value={addressInput}
-                                        onChange={(e) => setAddressInput(e.target.value)}
-                                        placeholder="Enter a property address..."
-                                        className="h-10 w-full bg-transparent text-sm text-text-primary placeholder:text-text-secondary/60 outline-none"
-                                        disabled={isLoading}
-                                    />
-                                </div>
-                                <motion.button
-                                    whileHover={{ scale: 1.03 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    type="submit"
-                                    disabled={isLoading || !addressInput.trim()}
-                                    className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-primary-flood disabled:cursor-not-allowed disabled:opacity-60"
+                            <div ref={searchContainerRef} className="relative">
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        handleAnalyze(addressInput);
+                                    }}
+                                    className={`flex flex-col gap-2 rounded-2xl border bg-slate-900/80 p-3 shadow-card-soft backdrop-blur-md transition-all duration-300 sm:flex-row sm:items-center ${
+                                        inputFocused
+                                            ? 'border-[#00FFCC]/50 shadow-[0_0_15px_rgba(0,255,204,0.3)]'
+                                            : 'border-white/10 hover:border-primary/50 hover:shadow-glow'
+                                    }`}
                                 >
-                                    {isLoading ? 'Analyzing…' : 'Analyze Property'}
-                                </motion.button>
-                            </form>
+                                    <div className="flex flex-1 items-center gap-3 px-2">
+                                        <span className="text-lg opacity-80" aria-hidden="true">📍</span>
+                                        <input
+                                            type="text"
+                                            value={addressInput}
+                                            onChange={(e) => setAddressInput(e.target.value)}
+                                            onFocus={() => {
+                                                setInputFocused(true);
+                                                setShowSuggestions(true);
+                                            }}
+                                            onBlur={() => setInputFocused(false)}
+                                            placeholder="Enter a property address..."
+                                            className="h-11 w-full bg-transparent text-sm text-text-primary placeholder:text-text-secondary/60 outline-none"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                    <motion.button
+                                        whileHover={{ scale: 1.03 }}
+                                        whileTap={{ scale: 0.97 }}
+                                        type="submit"
+                                        disabled={isLoading || !addressInput.trim()}
+                                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-primary-flood disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {isLoading ? 'Analyzing…' : 'Analyze Property'}
+                                    </motion.button>
+                                </form>
+                                {/* Address suggestion dropdown */}
+                                {showSuggestions && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-auto rounded-xl border border-white/10 bg-slate-900/95 py-2 shadow-xl backdrop-blur-md"
+                                    >
+                                        {filteredSuggestions.length > 0 ? (
+                                            filteredSuggestions.map((suggestion) => (
+                                                <button
+                                                    key={suggestion.address}
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        setAddressInput(suggestion.address);
+                                                        setShowSuggestions(false);
+                                                    }}
+                                                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-white/5"
+                                                >
+                                                    <span className="mt-0.5 shrink-0 text-text-secondary/80" aria-hidden="true">
+                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        </svg>
+                                                    </span>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-semibold text-text-primary">
+                                                            {suggestion.address}
+                                                        </div>
+                                                        <div className="mt-0.5 text-[11px] text-text-secondary">
+                                                            {suggestion.county}, {suggestion.state}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="px-4 py-3 text-[11px] text-text-secondary">
+                                                No suggestions. Type a full address and press Enter.
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </div>
                             {error && (
                                 <div className="text-xs font-medium text-red-400">
                                     {error}
@@ -708,36 +803,96 @@ function App() {
                         <p>Surface risk signals, trends, and recommendations powered by spatial and document analysis.</p>
                     </motion.div>
 
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-3" style={{ perspective: '1000px' }}>
                         {[
                             {
                                 title: 'The Future of Spatial Title Intelligence',
                                 body: 'How parcels, imagery, and LLMs reshape title search and examination.',
+                                bullets: [
+                                    'Parcel-aligned data replaces static documents for faster triage.',
+                                    'Map layers and imagery feed into explainable risk scoring.',
+                                    'LLMs summarize findings in underwriter-friendly language.',
+                                ],
                             },
                             {
                                 title: 'Why Lot Coverage Matters',
                                 body: 'Understanding buildable area, encumbrances, and climate-aware density.',
+                                bullets: [
+                                    'Buildable area and lot coverage drive valuation and risk.',
+                                    'Encumbrances and setbacks surface before they delay closing.',
+                                    'Climate-aware density keeps exposure in the picture.',
+                                ],
                             },
                             {
                                 title: 'Climate Risk and Underwriting',
                                 body: 'Moving from map screenshots to quantified spatial risk in your binder.',
+                                bullets: [
+                                    'Flood, fire, and other perils quantified at the parcel level.',
+                                    'Spatial risk feeds into pricing and underwriting decisions.',
+                                    'Clear documentation supports audits and renewals.',
+                                ],
                             },
-                        ].map((post) => (
+                        ].map((post, index) => (
                             <motion.article
                                 key={post.title}
                                 {...fadeUp}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
+                                className="group relative h-[180px] w-full transition-transform duration-300 hover:-translate-y-2"
                             >
-                                <div className="text-xs font-semibold text-text-primary">{post.title}</div>
-                                <p className="text-xs text-text-secondary">{post.body}</p>
-                                <span className="mt-1 text-[11px] text-primary">Read overview →</span>
+                                <div
+                                    className="relative h-full w-full transition-transform duration-500"
+                                    style={{
+                                        transformStyle: 'preserve-3d',
+                                        transform: insightFlippedIndex === index ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                                    }}
+                                >
+                                    {/* Front face */}
+                                    <div
+                                        className="absolute inset-0 flex flex-col gap-1.5 rounded-xl border border-white/5 bg-card/80 p-3 transition hover:border-primary/50 hover:shadow-glow"
+                                        style={{ backfaceVisibility: 'hidden' }}
+                                    >
+                                        <div className="text-xs font-semibold text-text-primary">{post.title}</div>
+                                        <p className="flex-1 text-xs text-text-secondary">{post.body}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setInsightFlippedIndex(index)}
+                                            className="inline-flex w-fit items-center justify-center rounded-lg bg-primary/20 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/30"
+                                        >
+                                            Read overview
+                                        </button>
+                                    </div>
+                                    {/* Back face */}
+                                    <div
+                                        className="absolute inset-0 flex flex-col rounded-xl border border-white/10 bg-slate-800 p-3"
+                                        style={{
+                                            backfaceVisibility: 'hidden',
+                                            transform: 'rotateY(180deg)',
+                                        }}
+                                    >
+                                        <div className="text-xs font-semibold text-text-primary">{post.title}</div>
+                                        <ul className="mt-1.5 flex flex-1 flex-col gap-1 text-[11px] text-text-secondary">
+                                            {post.bullets.map((bullet, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <span className="mt-0.5 shrink-0 text-primary">•</span>
+                                                    <span>{bullet}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button
+                                            type="button"
+                                            onClick={() => setInsightFlippedIndex(null)}
+                                            className="mt-1.5 w-fit rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-text-secondary transition hover:bg-white/10 hover:text-text-primary"
+                                        >
+                                            Back
+                                        </button>
+                                    </div>
+                                </div>
                             </motion.article>
                         ))}
                     </div>
                 </section>
 
-                {/* Metrics */}
-                <section id={sectionIds.metrics} className="space-y-4">
+                {/* Metrics / Outcomes — horizontal grid to break vertical flow */}
+                <section id={sectionIds.metrics} className="space-y-6 py-4">
                     <motion.div {...fadeUp}>
                         <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                             Outcomes
@@ -751,7 +906,7 @@ function App() {
                             hidden: {},
                             visible: { transition: { staggerChildren: 0.1 } },
                         }}
-                        className="glass-panel grid gap-4 border-white/5 bg-card/70 px-4 py-3 text-xs text-text-secondary sm:grid-cols-4 transition hover:border-primary/50 hover:shadow-glow"
+                        className="grid grid-cols-2 gap-6 rounded-2xl border border-white/10 bg-card/70 px-8 py-10 sm:grid-cols-4 sm:gap-8"
                     >
                         {[
                             {
@@ -781,14 +936,14 @@ function App() {
                                     hidden: { opacity: 0, y: 10 },
                                     visible: { opacity: 1, y: 0 },
                                 }}
-                                className="flex flex-col gap-1"
+                                className="flex flex-col items-center justify-center gap-2 text-center"
                             >
-                                <div className="text-sm font-semibold text-text-primary">
+                                <div className="text-5xl font-bold tracking-tight text-[#00FFCC] sm:text-6xl">
                                     {m.prefix && <span className="mr-0.5">{m.prefix}</span>}
                                     <CountUp end={m.end} duration={2.2} />
                                     {m.suffix && <span className="ml-0.5">{m.suffix}</span>}
                                 </div>
-                                <div className="text-[11px] text-text-secondary">{m.label}</div>
+                                <div className="text-[11px] text-text-secondary sm:max-w-[10rem]">{m.label}</div>
                             </motion.div>
                         ))}
                     </motion.div>
