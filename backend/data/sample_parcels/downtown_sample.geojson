@@ -1,0 +1,27 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "downtown_sample",
+        "address": "123 Main St, Irvine, CA 92618",
+        "zoning": "R-1",
+        "lot_size_sqft": 4000,
+        "year_built": 1989
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-117.8270, 33.6850],
+            [-117.8260, 33.6850],
+            [-117.8260, 33.6840],
+            [-117.8270, 33.6840],
+            [-117.8270, 33.6850]
+          ]
+        ]
+      }
+    }
+  ]
+}
