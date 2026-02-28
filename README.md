@@ -1,8 +1,8 @@
-# 🏛 TitleGuard AI
+# 🏛 ParcelIQ AI
 
 **Spatial Property Risk Intelligence Engine**
 
-TitleGuard AI reduces closing friction by surfacing spatial and legal risks before underwriting begins.
+ParcelIQ AI reduces closing friction by surfacing spatial and legal risks before underwriting begins.
 
 ## 🎯 What It Does
 
