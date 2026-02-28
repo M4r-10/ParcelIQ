@@ -13,6 +13,7 @@ import AISummaryBox from './AISummaryBox';
 function PropertyDashboard({ analysisResult, isLoading, address, onBack, initialLocation }) {
     const [activeLayers, setActiveLayers] = useState({
         floodZone: false,
+        wildfireZone: false,
         easement: false,
         buildableArea: false,
         encumberedArea: false,

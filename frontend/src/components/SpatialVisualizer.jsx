@@ -103,9 +103,15 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
         // 4) Dynamic AI Flood Zone
         if (analysisResult.ai_flood_zone && map.getSource('ai-flood-zone')) {
             map.getSource('ai-flood-zone').setData(analysisResult.ai_flood_zone);
-            console.log("Plotting AI dynamic flood zone");
         } else if (map.getSource('ai-flood-zone')) {
              map.getSource('ai-flood-zone').setData({ type: 'FeatureCollection', features: [] });
+        }
+
+        // 5) Historical Wildfire Zones
+        if (analysisResult.wildfire_zones && map.getSource('wildfire-zone')) {
+            map.getSource('wildfire-zone').setData(analysisResult.wildfire_zones);
+        } else if (map.getSource('wildfire-zone')) {
+             map.getSource('wildfire-zone').setData({ type: 'FeatureCollection', features: [] });
         }
 
         const displayAddress = address || resultAddress || 'Target Property';
@@ -213,6 +219,7 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
         // ── Manage Toggles ──
         const layerMap = {
             floodZone: ['ai-flood-fill', 'ai-flood-outline'],
+            wildfireZone: ['wildfire-fill', 'wildfire-outline'],
             easement: ['easement-fill'],
             buildableArea: ['buildable-fill'],
             encumberedArea: ['encumbered-fill'],
@@ -277,6 +284,9 @@ function addSources(map) {
     // Dynamic AI flood highlighting zone
     map.addSource('ai-flood-zone', { type: 'geojson', data: empty });
     
+    // Historical wildfire perimeters
+    map.addSource('wildfire-zone', { type: 'geojson', data: empty });
+    
     map.addSource('easement', { type: 'geojson', data: empty });
     map.addSource('buildable', { type: 'geojson', data: empty });
     map.addSource('encumbered', { type: 'geojson', data: empty });
@@ -340,6 +350,46 @@ function addLayers(map) {
             layout: { visibility: 'none' },
             paint: {
                 'line-color': '#3B82F6',
+                'line-width': 1.5,
+                'line-opacity': 0.7,
+            }
+        },
+        '3d-buildings'
+    );
+
+    // Real NIFC Historical Wildfire Polygons
+    map.addLayer(
+        {
+            id: 'wildfire-fill',
+            type: 'fill',
+            source: 'wildfire-zone',
+            layout: { visibility: 'none' },
+            paint: {
+                // Color intensity based on zone severity weight
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['coalesce', ['get', 'severity'], 0.5],
+                    0.2, 'rgba(251, 146, 60, 0.25)',   // lighter orange 
+                    0.5, 'rgba(249, 115, 22, 0.35)',   // medium orange
+                    0.8, 'rgba(234, 88, 12, 0.45)',    // deep orange
+                    1.0, 'rgba(194, 65, 12, 0.55)',    // darkest red-orange
+                ],
+                'fill-opacity': 0.6,
+            }
+        },
+        '3d-buildings'
+    );
+
+    // Outline for the wildfire polygons
+    map.addLayer(
+        {
+            id: 'wildfire-outline',
+            type: 'line',
+            source: 'wildfire-zone',
+            layout: { visibility: 'none' },
+            paint: {
+                'line-color': '#F97316',
                 'line-width': 1.5,
                 'line-opacity': 0.7,
             }

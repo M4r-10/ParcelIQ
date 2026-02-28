@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 
 const LAYERS = [
     { key: 'floodZone', label: 'Flood Zone', color: '#3B82F6' },
+    { key: 'wildfireZone', label: 'Wildfire Zone', color: '#F97316' },
     { key: 'easement', label: 'Easement Area', color: '#EF4444' },
     { key: 'buildableArea', label: 'Buildable Area', color: '#22C55E' },
     { key: 'encumberedArea', label: 'Encumbered Area', color: '#991B1B' },

@@ -62,9 +62,10 @@ W_WEIGHTED = 0.70   # weight of the analytical/weighted path
 W_ML       = 0.30   # weight of the ML prediction path
 
 # Per-factor base weights  (must sum to 1.0)
-W_FLOOD       = 0.30
+W_FLOOD       = 0.20
+W_WILDFIRE    = 0.15
 W_EASEMENT    = 0.20
-W_COVERAGE    = 0.20
+W_COVERAGE    = 0.15
 W_OWNERSHIP   = 0.10  
 W_AGE         = 0.10
 W_CV_DELTA    = 0.10
@@ -162,6 +163,23 @@ def nl_historical_flood_risk(claims: int) -> float:
     if claims <= 0:
         return 0.0
     return 1.0 - math.exp(-claims / 50.0)
+
+
+def nl_wildfire_risk(fire_count: int) -> float:
+    """
+    Non-linear scoring for historical wildfire exposure.
+    
+    Formula: Risk = 1.0 - exp(-fire_count / 2.0)
+    
+    Behavior:
+      - 0 fires = 0.0 risk
+      - 1 fire  = ~0.39 risk
+      - 3 fires = ~0.78 risk
+      - 5+ fires = ~0.92+ risk
+    """
+    if fire_count <= 0:
+        return 0.0
+    return 1.0 - math.exp(-fire_count / 2.0)
 
 
 def nl_lot_coverage_risk(
@@ -677,6 +695,7 @@ def compute_risk_score(property_data: dict) -> dict:
     coverage_pct = property_data.get("lot_coverage_pct", 0.0)
     zoning_max = property_data.get("zoning_max_coverage", 0.70)
     historical_claims = property_data.get("historical_flood_claims", 0)
+    wildfire_count = property_data.get("wildfire_count", 0)
     
     # These may be None when Melissa data is unavailable
     num_transfers = property_data.get("num_transfers_5yr")
@@ -690,6 +709,7 @@ def compute_risk_score(property_data: dict) -> dict:
     f_historical = nl_historical_flood_risk(historical_claims)
     f_easement = nl_easement_risk(easement_pct)
     f_coverage = nl_lot_coverage_risk(coverage_pct, zoning_max)
+    f_wildfire = nl_wildfire_risk(wildfire_count)
     
     # Track which factors are available vs unavailable
     f_ownership = None
@@ -706,6 +726,7 @@ def compute_risk_score(property_data: dict) -> dict:
     # Build weighted score from available factors only, re-normalizing weights
     available = {
         "flood": (W_FLOOD, f_historical), # Base it purely off history now
+        "wildfire": (W_WILDFIRE, f_wildfire),
         "easement": (W_EASEMENT, f_easement),
         "coverage": (W_COVERAGE, f_coverage),
     }
@@ -780,6 +801,13 @@ def compute_risk_score(property_data: dict) -> dict:
         if claims <= 1000: return "Level 3 (201-1000 claims)"
         return "Level 4 (1000+ claims)"
 
+    def _wildfire_level(count):
+        if count <= 0: return "Level 0 (No fires)"
+        if count == 1: return "Level 1 (1 historical fire)"
+        if count <= 3: return f"Level 2 ({count} fires)"
+        if count <= 7: return f"Level 3 ({count} fires)"
+        return f"Level 4 ({count}+ fires)"
+
     # Helper for unavailable factor entries
     def _unavailable_factor(label):
         return {
@@ -800,6 +828,14 @@ def compute_risk_score(property_data: dict) -> dict:
             "score": round(f_historical * 100, 1),
             "weight": W_FLOOD,
             "severity": _severity(f_historical),
+        },
+        "wildfire": {
+            "label": "Wildfire Risk Analysis",
+            "description": "Historical wildfire perimeters overlapping this area (NIFC database)",
+            "display_value": _wildfire_level(wildfire_count),
+            "score": round(f_wildfire * 100, 1),
+            "weight": W_WILDFIRE,
+            "severity": _severity(f_wildfire),
         },
         "easement": {
             "label": "Easement Encroachment",
