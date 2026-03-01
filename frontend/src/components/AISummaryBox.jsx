@@ -59,6 +59,11 @@ function AISummaryBox({ summaryData, isLoading }) {
             '',
             `Closing Delay Likelihood: ${closing_delay_likelihood}`,
             delay_reason && `Reason: ${delay_reason}`,
+            ...(summaryData.financial_impacts?.length > 0 ? [
+                '',
+                'Estimated Financial Impacts:',
+                ...summaryData.financial_impacts.map(f => `- ${f.category}: ${f.estimate}`)
+            ] : []),
         ].filter(Boolean).join('\n');
 
         try {
@@ -134,6 +139,23 @@ function AISummaryBox({ summaryData, isLoading }) {
                                     {closing_delay_likelihood}
                                 </strong>
                                 {delay_reason && <span>— {delay_reason}</span>}
+                            </div>
+                        )}
+
+                        {/* Financial Impacts */}
+                        {summaryData.financial_impacts && summaryData.financial_impacts.length > 0 && (
+                            <div className="mt-4">
+                                <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                                    Estimated Financial Impacts
+                                </div>
+                                <div className="flex flex-col gap-2 rounded-lg border border-white/5 bg-white/[0.03] p-3">
+                                    {summaryData.financial_impacts.map((impact, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs">
+                                            <span className="text-text-secondary">{impact.category}</span>
+                                            <span className="font-semibold text-text-primary">{impact.estimate}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </motion.div>
