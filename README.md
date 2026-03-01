@@ -92,8 +92,6 @@ TitleGuard calculates Risk Score using an ensemble machine learning approach (Gr
 | **Melissa Data** | County assessor property records (Age, Size, Ownership) |
 | **HasData** | Live Zillow property valuation & rental estimates |
 
-> **Note:** The app implements smart fallbacks. If HasData or Melissa keys are missing/exhausted, it will automatically serve deterministic mock data to ensure the UI continues functioning beautifully.
-
 ## 🎬 Demo Flow
 
 1. Enter a high-risk property address (e.g., `21231 Avenida Planicie, Lake Forest, CA 92630` for Wildfires, or `141 Old Field Ln, Milford, CT 06460` for Floods).
