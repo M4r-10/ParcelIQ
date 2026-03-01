@@ -37,7 +37,7 @@ def lookup_property(address: str) -> dict | None:
     """
     api_key = Config.MELISSA_API_KEY
     if not api_key or api_key == "your-melissa-key-here":
-        print("Melissa API key not configured — skipping property lookup")
+        print("Melissa API key not configured - skipping property lookup")
         return None
 
     # Only request the 3 column groups we actually use for risk scoring.

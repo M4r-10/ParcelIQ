@@ -24,3 +24,7 @@ Thumbs.db
 *.egg-info/
 dist/
 build/
+
+# Machine Learning Models
+data/models/
+*.pkl

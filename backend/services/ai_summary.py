@@ -113,7 +113,7 @@ FACTOR BREAKDOWN:
         # Sort by absolute value to show top drivers first
         sorted_shap = sorted(shap_vals.items(), key=lambda x: abs(x[1]), reverse=True)
         for feat, val in sorted_shap:
-            direction = "↑ increases risk" if val > 0 else "↓ decreases risk"
+            direction = "(+) increases risk" if val > 0 else "(-) decreases risk"
             prompt += f"- {feat}: {val:+.4f} ({direction})\n"
 
         ml_prob = ml_data.get("ml_risk_probability", 0)
