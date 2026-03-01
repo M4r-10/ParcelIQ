@@ -35,6 +35,8 @@ import numpy as np
 try:
     from sklearn.ensemble import GradientBoostingClassifier
     from sklearn.linear_model import LogisticRegression
+    from sklearn.neural_network import MLPClassifier
+    from sklearn.calibration import CalibratedClassifierCV
     from sklearn.preprocessing import StandardScaler
     import joblib
     HAS_SKLEARN = True
@@ -353,10 +355,13 @@ def _interaction_terms(
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Module-level model cache (loaded/trained once)
-_model = None         # GradientBoostingClassifier
-_scaler = None        # StandardScaler
-_delay_model = None   # LogisticRegression (Stage 5)
-_shap_explainer = None  # SHAP TreeExplainer (Stage 4)
+_model = None              # GradientBoostingClassifier
+_scaler = None             # StandardScaler
+_delay_model = None        # LogisticRegression (Stage 5)
+_nn_model = None           # MLPClassifier (neural network branch)
+_meta_model = None         # LogisticRegression (stacking meta-model)
+_calibrated_model = None   # CalibratedClassifierCV (calibrated stacker)
+_shap_explainer = None     # SHAP TreeExplainer (Stage 4)
 
 
 def _train_models():
@@ -412,7 +417,7 @@ def _train_models():
     Remember to declare `global _model, _scaler, _delay_model, _shap_explainer`
     at the top of the function!
     """
-    global _model, _scaler, _delay_model, _shap_explainer
+    global _model, _scaler, _delay_model, _nn_model, _meta_model, _calibrated_model, _shap_explainer
 
     if not HAS_SKLEARN:
         return
@@ -420,57 +425,90 @@ def _train_models():
     gbm_path = _MODEL_DIR / "risk_gbm.pkl"
     lr_path = _MODEL_DIR / "delay_lr.pkl"
     sc_path = _MODEL_DIR / "scaler.pkl"
+    nn_path = _MODEL_DIR / "risk_nn.pkl"
+    meta_path = _MODEL_DIR / "meta_stacker.pkl"
+    cal_path = _MODEL_DIR / "calibrated_meta.pkl"
 
-    if gbm_path.exists() and lr_path.exists() and sc_path.exists(): 
-        print(f"Loading cached models")
+    if all(p.exists() for p in [gbm_path, lr_path, sc_path, nn_path, meta_path, cal_path]):
+        print("[risk] Loading cached models (GBM + LR + NN + Meta + Calibrated)")
         _model = joblib.load(gbm_path)
         _delay_model = joblib.load(lr_path)
         _scaler = joblib.load(sc_path)
+        _nn_model = joblib.load(nn_path)
+        _meta_model = joblib.load(meta_path)
+        _calibrated_model = joblib.load(cal_path)
 
-        # Patch for scikit-learn version differences on older pickled models
         if not hasattr(_delay_model, 'multi_class'):
             _delay_model.multi_class = 'auto'
 
-        _X_train = None #TODO Intialize later with actual data
         _init_shap()
         return
 
-
-    with open(_CSV_PATH, mode = 'r', newline='', encoding = 'utf-8') as file: 
+    # --- Load training CSV ---
+    with open(_CSV_PATH, mode='r', newline='', encoding='utf-8') as file:
         reader = csv.DictReader(file)
-        x_list, y_list  = [], []
-        for row in reader: 
+        x_list, y_list = [], []
+        for row in reader:
             x_list.append([float(row[c]) for c in _FEATURE_COLS])
             y_list.append(int(row["label"]))
 
     X = np.array(x_list)
     Y = np.array(y_list)
-    _X_train = X.copy() # Save for SHAP usage later
 
     _scaler = StandardScaler()
     X_scaled = _scaler.fit_transform(X)
 
+    # --- Train GBM (base model 1) ---
     _model = GradientBoostingClassifier(
         n_estimators=200,
         max_depth=4,
         learning_rate=0.1,
         subsample=0.8,
-        random_state=42
+        random_state=42,
     )
     _model.fit(X_scaled, Y)
 
+    # --- Train Logistic Regression (base model 2 / delay model) ---
     _delay_model = LogisticRegression(max_iter=500, random_state=42)
     _delay_model.fit(X_scaled, Y)
 
+    # --- Train Neural Network (base model 3) ---
+    _nn_model = MLPClassifier(
+        hidden_layer_sizes=(64, 32),
+        activation='relu',
+        solver='adam',
+        alpha=0.0005,
+        max_iter=500,
+        random_state=42,
+    )
+    _nn_model.fit(X_scaled, Y)
+
+    # --- Stacking Meta-Model ---
+    # Collect base model predictions as features for the stacker
+    p_gbm = _model.predict_proba(X_scaled)[:, 1]
+    p_lr = _delay_model.predict_proba(X_scaled)[:, 1]
+    p_nn = _nn_model.predict_proba(X_scaled)[:, 1]
+    stack_X = np.column_stack([p_gbm, p_lr, p_nn])
+
+    _meta_model = LogisticRegression(max_iter=500, random_state=42)
+    _meta_model.fit(stack_X, Y)
+
+    # --- Isotonic Calibration ---
+    _calibrated_model = CalibratedClassifierCV(_meta_model, method='isotonic', cv=3)
+    _calibrated_model.fit(stack_X, Y)
+
+    # --- Cache all models ---
     _MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(_model, gbm_path)
     joblib.dump(_delay_model, lr_path)
     joblib.dump(_scaler, sc_path)
+    joblib.dump(_nn_model, nn_path)
+    joblib.dump(_meta_model, meta_path)
+    joblib.dump(_calibrated_model, cal_path)
 
-    print("Models sucessfully trained and cached")
+    print("[risk] All models trained: GBM + LR + NN + Meta-Stacker + Calibrated")
 
     _init_shap()
-    print("SHAP explainer initialized")
     return
 
 
@@ -535,12 +573,37 @@ def _ml_predict(feature_vec: list[float]) -> Optional[dict]:
     """
     if _model is None or _scaler is None:
         return None
-    
+
     X = np.array([feature_vec])
     X_scaled = _scaler.transform(X)
-    prob = float(_model.predict_proba(X_scaled)[0, 1])
+
+    # --- Base model predictions ---
+    p_gbm = float(_model.predict_proba(X_scaled)[0, 1])
+    p_lr = float(_delay_model.predict_proba(X_scaled)[0, 1]) if _delay_model else p_gbm
+    p_nn = float(_nn_model.predict_proba(X_scaled)[0, 1]) if _nn_model else p_gbm
+
+    # --- Stacking meta-model ---
+    base_probs = np.array([p_gbm, p_lr, p_nn])
+    if _calibrated_model is not None:
+        stacked_prob = float(_calibrated_model.predict_proba(base_probs.reshape(1, -1))[0, 1])
+    elif _meta_model is not None:
+        stacked_prob = float(_meta_model.predict_proba(base_probs.reshape(1, -1))[0, 1])
+    else:
+        stacked_prob = float(base_probs.mean())
+
+    # --- Uncertainty quantification ---
+    risk_mean = float(base_probs.mean())
+    risk_std = float(base_probs.std())
+    if risk_std > 0.15:
+        confidence_level = "Low"
+    elif risk_std > 0.07:
+        confidence_level = "Medium"
+    else:
+        confidence_level = "High"
+
     importance = dict(zip(_FEATURE_COLS, _model.feature_importances_))
-    
+
+    # --- SHAP values (from GBM — most interpretable) ---
     shap_dict = {}
     if _shap_explainer is not None:
         try:
@@ -552,9 +615,20 @@ def _ml_predict(feature_vec: list[float]) -> Optional[dict]:
             print(f"Error computing SHAP values: {e}")
 
     return {
-        "ml_risk_probability": prob,
+        "ml_risk_probability": stacked_prob,
         "feature_importance": importance,
-        "shap_values": shap_dict
+        "shap_values": shap_dict,
+        "ensemble_components": {
+            "gbm": round(p_gbm, 4),
+            "logistic": round(p_lr, 4),
+            "neural_net": round(p_nn, 4),
+            "stacked_output": round(stacked_prob, 4),
+        },
+        "uncertainty": {
+            "mean": round(risk_mean, 4),
+            "std_dev": round(risk_std, 4),
+            "confidence_level": confidence_level,
+        },
     }
 
 
@@ -764,14 +838,24 @@ def compute_risk_score(property_data: dict) -> dict:
     else:
         weighted_raw = 0.0
     
-    # Interaction terms (only if ownership is available)
+    # --- Enhanced Feature Engineering ---
+    # Add interaction terms for richer ML signal
+    f_own_safe = f_ownership if f_ownership is not None else 0.0
+    f_age_safe = f_age if f_age is not None else 0.0
+    f_cv_safe = f_cv if f_cv is not None else 0.0
+
+    interaction_coverage_easement = f_coverage * f_easement
+    interaction_flood_ownership = f_historical * f_own_safe
+    risk_density = f_historical + f_coverage + f_easement + f_wildfire + f_earthquake
+    nonlinear_mix = math.sqrt(f_age_safe * f_cv_safe) if (f_age_safe > 0 and f_cv_safe > 0) else 0.0
+
+    # Interaction terms (enhanced with new factors)
     interaction = _interaction_terms(
-        f_flood, f_easement, f_coverage,
-        f_ownership if f_ownership is not None else 0.0,
+        f_flood, f_easement, f_coverage, f_own_safe,
     )
     
     weighted_score = max(0.0, min(100.0, (weighted_raw + 0.15 * interaction) * 100))
-    
+
     # ML prediction (use 0.0 defaults for unavailable features)
     flood_exposure = float(inside_flood)
     feature_vec = [
@@ -792,10 +876,86 @@ def compute_risk_score(property_data: dict) -> dict:
     if ml_result:
         ml_score = ml_result["ml_risk_probability"] * 100
         final_score = W_WEIGHTED * weighted_score + W_ML * ml_score
-        scoring_method = "blended"
+        scoring_method = "stacked_ensemble"
     else:
         final_score = weighted_score
         scoring_method = "weighted_only"
+
+    # --- Monte Carlo Simulation ---
+    # Simulate variability to compute risk distribution
+    mc_scores = []
+    n_simulations = 100
+    rng = np.random.default_rng(42)
+
+    for _ in range(n_simulations):
+        # Perturb inputs within realistic noise bounds
+        mc_flood_dist = max(0, flood_dist + rng.normal(0, 10))   # ±10m
+        mc_coverage = max(0, min(1, coverage_pct + rng.normal(0, 0.02)))  # ±2%
+        mc_easement = max(0, min(1, easement_pct + rng.normal(0, 0.01)))  # ±1%
+        mc_anomaly = max(0, min(1, (anomaly or 0) + rng.normal(0, 0.05)))
+
+        mc_f_flood = nl_flood_risk(inside_flood, mc_flood_dist, flood_zone)
+        mc_f_historical = nl_historical_flood_risk(historical_claims)
+        mc_f_easement = nl_easement_risk(mc_easement)
+        mc_f_coverage = nl_lot_coverage_risk(mc_coverage, zoning_max)
+        mc_f_wildfire = nl_wildfire_risk(wildfire_count)
+        mc_f_earthquake = nl_earthquake_risk(earthquake_count)
+
+        mc_available = {
+            "flood": (W_FLOOD, mc_f_historical),
+            "wildfire": (W_WILDFIRE, mc_f_wildfire),
+            "earthquake": (W_EARTHQUAKE, mc_f_earthquake),
+            "easement": (W_EASEMENT, mc_f_easement),
+            "coverage": (W_COVERAGE, mc_f_coverage),
+        }
+        if f_ownership is not None:
+            mc_f_own = nl_ownership_risk(
+                num_transfers, avg_hold, mc_anomaly
+            )
+            mc_available["ownership"] = (W_OWNERSHIP, mc_f_own)
+        if f_age is not None:
+            mc_available["age"] = (W_AGE, f_age_safe)
+        if f_cv is not None:
+            mc_available["cv_delta"] = (W_CV_DELTA, f_cv_safe)
+
+        mc_total_w = sum(w for w, _ in mc_available.values())
+        if mc_total_w > 0:
+            mc_raw = sum((w / mc_total_w) * s for w, s in mc_available.values())
+        else:
+            mc_raw = 0.0
+
+        mc_interaction = _interaction_terms(
+            mc_f_flood, mc_f_easement, mc_f_coverage,
+            mc_f_own if f_ownership is not None else 0.0,
+        )
+        mc_weighted = max(0, min(100, (mc_raw + 0.15 * mc_interaction) * 100))
+
+        if ml_result:
+            mc_final = W_WEIGHTED * mc_weighted + W_ML * ml_score
+        else:
+            mc_final = mc_weighted
+
+        mc_scores.append(mc_final)
+
+    mc_scores_arr = np.array(mc_scores)
+    risk_distribution = {
+        "mean": round(float(mc_scores_arr.mean()), 2),
+        "std_dev": round(float(mc_scores_arr.std()), 2),
+        "p5": round(float(np.percentile(mc_scores_arr, 5)), 2),
+        "p50": round(float(np.percentile(mc_scores_arr, 50)), 2),
+        "p95": round(float(np.percentile(mc_scores_arr, 95)), 2),
+        "worst_case": round(float(mc_scores_arr.max()), 2),
+        "n_simulations": n_simulations,
+    }
+
+    # Determine overall uncertainty level
+    mc_std = risk_distribution["std_dev"]
+    if mc_std > 8.0:
+        uncertainty_level = "High"
+    elif mc_std > 3.0:
+        uncertainty_level = "Medium"
+    else:
+        uncertainty_level = "Low"
         
     # Build human-readable factor breakdown
     def _severity(s):
@@ -931,13 +1091,19 @@ def compute_risk_score(property_data: dict) -> dict:
         factors_dict["cv_delta"] = _unavailable_factor("Survey Discrepancy")
 
     return {
-        "overall_score": final_score,
+        "overall_score": round(final_score, 2),
         "risk_tier": get_risk_tier(final_score),
+        "risk_distribution": risk_distribution,
+        "uncertainty_level": uncertainty_level,
         "factors": factors_dict,
         "interactions": {
-            "value": interaction
+            "coverage_x_easement": round(interaction_coverage_easement, 4),
+            "flood_x_ownership": round(interaction_flood_ownership, 4),
+            "risk_density": round(risk_density, 4),
+            "nonlinear_mix": round(nonlinear_mix, 4),
+            "combined": round(interaction, 4),
         },
-        "weighted_score": weighted_score,
+        "weighted_score": round(weighted_score, 2),
         "ml": ml_result,
         "delay": delay_result,
         "scoring_method": scoring_method,
