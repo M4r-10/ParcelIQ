@@ -44,11 +44,11 @@ function RiskScoreCard({ riskData, coverageData, isLoading, score }) {
     /* ── Loading ── */
     if (isLoading) {
         return (
-            <div className="border-b border-white/5 p-6">
+            <div className="flex h-full min-h-0 flex-1 flex-col p-6">
                 <div className="mb-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
                     Risk Assessment
                 </div>
-                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
                     <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/10 border-t-white" />
                     <p className="text-xs text-text-secondary">Computing risk score…</p>
                 </div>
@@ -59,11 +59,11 @@ function RiskScoreCard({ riskData, coverageData, isLoading, score }) {
     /* ── Empty state ── */
     if (!riskData) {
         return (
-            <div className="border-b border-white/5 p-6">
+            <div className="flex h-full min-h-0 flex-1 flex-col p-6">
                 <div className="mb-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
                     Risk Assessment
                 </div>
-                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
                     <div className="text-2xl opacity-30">📊</div>
                     <p className="max-w-[200px] text-xs text-text-secondary">
                         Enter an address to begin analysis
@@ -80,7 +80,7 @@ function RiskScoreCard({ riskData, coverageData, isLoading, score }) {
     const tierColors = getTierColors(tierLower);
 
     return (
-        <>
+        <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
             {/* Score Gauge */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
@@ -176,7 +176,7 @@ function RiskScoreCard({ riskData, coverageData, isLoading, score }) {
                     <CoverageVisual data={coverageData} />
                 </motion.div>
             )}
-        </>
+        </div>
     );
 }
 

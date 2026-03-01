@@ -6,8 +6,9 @@
  *   2. Dashboard — spatial viewer + risk analysis
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import CountUp from 'react-countup';
+import { Maximize2, X, Linkedin } from 'lucide-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import RiskScoreCard from './components/RiskScoreCard';
@@ -22,6 +23,7 @@ const sectionIds = {
     aiEngine: 'ai-engine',
     process: 'process',
     about: 'about',
+    team: 'team',
     security: 'security',
     outcomes: 'outcomes',
     insights: 'insights',
@@ -38,6 +40,34 @@ const ADDRESS_SUGGESTIONS = [
     { address: '100 Commerce St, Austin, TX 78701', county: 'Travis County', state: 'TX' },
 ];
 
+// Team members for Meet the Team section
+const TEAM_MEMBERS = [
+    {
+        name: 'Mario Olivas',
+        role: 'Head of Engineering',
+        bio: 'Spatial systems and mapping infrastructure. Former geospatial lead at a major title tech provider.',
+        image: 'https://via.placeholder.com/400x400/475569/94a3b8?text=',
+        linkedin: 'https://www.linkedin.com/in/marioo5/',
+        coords: 'LAT: 33.6846 | LON: -117.8265',
+    },
+    {
+        name: 'Harmeet Singh',
+        role: 'Lead Data Scientist',
+        bio: 'Risk modeling and ML pipelines. PhD in applied spatial statistics; focused on explainable AI for underwriting.',
+        image: 'https://via.placeholder.com/400x400/475569/94a3b8?text=',
+        linkedin: 'https://www.linkedin.com/in/harmeet-singh-uppal/',
+        coords: 'LAT: 34.0522 | LON: -118.2437',
+    },
+    {
+        name: 'Allyson Lay',
+        role: 'Product & Design',
+        bio: 'Title and underwriting workflows. Blends domain expertise with modern UX for spatial risk tools.',
+        image: 'https://via.placeholder.com/400x400/475569/94a3b8?text=',
+        linkedin: 'https://linkedin.com',
+        coords: 'LAT: 32.7157 | LON: -117.1611',
+    },
+];
+
 const fadeUp = {
     initial: { opacity: 0, y: 24 },
     whileInView: { opacity: 1, y: 0 },
@@ -47,6 +77,7 @@ const fadeUp = {
 
 function App() {
     const [activeProductTab, setActiveProductTab] = useState('spatial');
+    const [isPlatformMapFullscreen, setIsPlatformMapFullscreen] = useState(false);
     const [expandedExplain, setExpandedExplain] = useState(false);
     const [mode, setMode] = useState('landing'); // 'landing' | 'experience'
     const [analysisResult, setAnalysisResult] = useState(null);
@@ -67,8 +98,19 @@ function App() {
         const el = document.getElementById(targetId);
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (mode === 'experience') {
+            setMode('landing');
+            setAnalysisResult(null);
+            setError(null);
+            setIsLoading(false);
+            setCurrentAddress('');
+            setAddressInput('');
+            setTimeout(() => {
+                const el2 = document.getElementById(targetId);
+                if (el2) el2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 200);
         }
-    }, []);
+    }, [mode]);
 
     const handleLogoClick = useCallback(() => {
         if (mode === 'experience') {
@@ -137,6 +179,17 @@ function App() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Exit platform map fullscreen on Escape
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') setIsPlatformMapFullscreen(false);
+        };
+        if (isPlatformMapFullscreen) {
+            document.addEventListener('keydown', handleEsc);
+            return () => document.removeEventListener('keydown', handleEsc);
+        }
+    }, [isPlatformMapFullscreen]);
+
     const filteredSuggestions = ADDRESS_SUGGESTIONS.filter((s) =>
         s.address.toLowerCase().includes(addressInput.trim().toLowerCase())
     );
@@ -155,6 +208,32 @@ function App() {
 
             <Header onLogoClick={handleLogoClick} onHomeClick={handleHomeClick} onScrollToSection={handleScrollToSection} />
 
+            {/* Platform 3D Map fullscreen overlay — matches PropertyDashboard expand */}
+            <AnimatePresence>
+                {isPlatformMapFullscreen && (
+                    <motion.div
+                        key="platform-map-fullscreen"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="fixed inset-0 z-50 flex flex-col bg-background-subtle"
+                    >
+                        <div className="relative flex-1 min-h-0">
+                            <SpatialVisualizer resizeTrigger={isPlatformMapFullscreen} />
+                            <button
+                                type="button"
+                                onClick={() => setIsPlatformMapFullscreen(false)}
+                                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 backdrop-blur-md transition hover:bg-slate-800/80 hover:text-white"
+                                aria-label="Exit fullscreen"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {mode === 'experience' ? (
                 <main className="pt-24">
                     <PropertyDashboard
@@ -165,9 +244,10 @@ function App() {
                     />
                 </main>
             ) : (
-                <main className="mx-auto mt-24 flex w-full max-w-full flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
+                <main className="mx-auto mt-24 flex w-full max-w-full flex-col px-4 pb-6 pt-10 lg:px-6 lg:pt-12">
+                <div className="mx-auto w-full max-w-7xl space-y-0">
                 {/* Hero */}
-                <section id={sectionIds.hero} className="grid gap-10 lg:grid-cols-2 lg:items-center">
+                <section id={sectionIds.hero} className="grid gap-10 py-12 lg:grid-cols-2 lg:items-center">
                     <motion.div
                         {...fadeUp}
                         className="space-y-8"
@@ -177,12 +257,12 @@ function App() {
                             Spatial Property Risk Intelligence Engine
                         </div>
                         <div className="space-y-4">
-                            <h1 className="bg-gradient-to-r from-sky-300 via-primary to-blue-400 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-5xl lg:text-[3.1rem]">
+                            <h1 className="bg-gradient-to-r from-sky-300 via-primary to-blue-400 bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl lg:text-[3.1rem]">
                                 See Every
                                 <br />
                                 Parcel Clearly
                             </h1>
-                            <p className="max-w-xl text-sm leading-relaxed text-text-secondary">
+                            <p className="max-w-xl text-sm font-light leading-relaxed text-slate-400">
                                 Enter an address to generate an AI-powered spatial risk view — open for underwriters,
                                 examiners, and real estate teams without a sales gate.
                             </p>
@@ -194,7 +274,7 @@ function App() {
                                         e.preventDefault();
                                         handleAnalyze(addressInput);
                                     }}
-                                    className={`flex flex-col gap-2 rounded-2xl border bg-slate-900/80 p-3 shadow-card-soft backdrop-blur-md transition-all duration-300 sm:flex-row sm:items-center ${
+                                    className={`flex flex-col gap-2 rounded-2xl border bg-slate-900/80 p-3 shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] backdrop-blur-md transition-all duration-300 sm:flex-row sm:items-center ${
                                         inputFocused
                                             ? 'border-[#00FFCC]/50 shadow-[0_0_15px_rgba(0,255,204,0.3)]'
                                             : 'border-white/10 hover:border-primary/50 hover:shadow-glow'
@@ -221,7 +301,7 @@ function App() {
                                         whileTap={{ scale: 0.97 }}
                                         type="submit"
                                         disabled={isLoading || !addressInput.trim()}
-                                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-primary-flood disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         {isLoading ? 'Analyzing…' : 'Analyze Property'}
                                     </motion.button>
@@ -274,28 +354,6 @@ function App() {
                                     {error}
                                 </div>
                             )}
-                            <div className="space-y-1 text-[11px] text-text-secondary">
-                                <div>Or try a sample:</div>
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        '123 Main St, Irvine, CA 92618',
-                                        '456 Oak Ave, Irvine, CA 92620',
-                                    ].map((sample) => (
-                                        <button
-                                            key={sample}
-                                            type="button"
-                                            onClick={() => {
-                                                setAddressInput(sample);
-                                                handleAnalyze(sample);
-                                            }}
-                                            disabled={isLoading}
-                                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-text-secondary transition hover:border-primary/50 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                            {sample}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
                         <div className="flex flex-wrap gap-6 text-xs text-text-secondary">
                             <div>
@@ -407,16 +465,16 @@ function App() {
                 </section>
 
                 {/* Product Tabs */}
-                <section id={sectionIds.product} className="space-y-8">
+                <section id={sectionIds.product} className="space-y-8 py-12">
                     <motion.div
                         {...fadeUp}
                         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
                     >
                         <div>
-                            <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                                Platform
+                            <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
+                                The Engine
                             </h2>
-                            <p className="mt-2 text-xl font-semibold text-text-primary">
+                            <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
                                 Two engines. One spatially-aware underwriting stack.
                             </p>
                         </div>
@@ -468,8 +526,16 @@ function App() {
                                                 </span>
                                             </div>
                                             <div className="flex flex-1 items-center justify-center">
-                                                <div className="h-44 w-full max-w-xs">
+                                                <div className="relative h-44 w-full max-w-xs">
                                                     <SpatialVisualizer />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsPlatformMapFullscreen(true)}
+                                                        className="absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 backdrop-blur-md transition hover:bg-slate-800/80 hover:text-white"
+                                                        aria-label="Full screen"
+                                                    >
+                                                        <Maximize2 className="h-4 w-4" />
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between text-[11px] text-text-secondary">
@@ -600,13 +666,15 @@ function App() {
                     </div>
                 </section>
 
+                <div className="h-px w-full bg-slate-800/50" aria-hidden />
+
                 {/* How it works */}
-                <section id={sectionIds.process} className="space-y-6">
+                <section id={sectionIds.process} className="space-y-6 py-12">
                     <motion.div {...fadeUp}>
                         <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                             How It Works
                         </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
                             From address to explainable spatial risk — in four steps.
                         </p>
                     </motion.div>
@@ -662,20 +730,22 @@ function App() {
                     </motion.div>
                 </section>
 
+                <div className="h-px w-full bg-slate-800/50" aria-hidden />
+
                 {/* About */}
-                <section id={sectionIds.about} className="space-y-6">
+                <section id={sectionIds.about} className="space-y-6 py-12">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                        <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
                             About
                         </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
                             Built for the next generation of title &amp; underwriting.
                         </p>
                     </motion.div>
                     <div className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)]">
                         <motion.div
                             {...fadeUp}
-                            className="space-y-4 text-sm text-text-secondary"
+                            className="space-y-4 text-sm font-light text-text-secondary"
                         >
                             <p>
                                 ParcelIQ transforms static title reports into spatial intelligence. We help title
@@ -712,7 +782,7 @@ function App() {
 
                         <motion.div
                             {...fadeUp}
-                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
+                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs font-light text-text-secondary"
                         >
                             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                                 Credibility
@@ -729,77 +799,17 @@ function App() {
                     </div>
                 </section>
 
-                {/* Security */}
-                <section id={sectionIds.security} className="space-y-6">
-                    <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                            Security &amp; Compliance
-                        </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
-                            Enterprise-grade controls from day zero.
-                        </p>
-                    </motion.div>
-
-                    <motion.div
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, amount: 0.3 }}
-                        variants={{
-                            hidden: {},
-                            visible: { transition: { staggerChildren: 0.12 } },
-                        }}
-                        className="grid gap-4 md:grid-cols-4"
-                    >
-                        {[
-                            {
-                                title: 'Data Encryption',
-                                body: 'Encryption in transit and at rest for all customer data.',
-                            },
-                            {
-                                title: 'SOC2-Ready Architecture',
-                                body: 'Control surfaces and logging built for formal audits.',
-                            },
-                            {
-                                title: 'Secure API Integrations',
-                                body: 'Scoped API keys, rotating secrets, and IP allowlisting.',
-                            },
-                            {
-                                title: 'Role-Based Access',
-                                body: 'Granular permissions for underwriting, operations, and dev teams.',
-                            },
-                        ].map((item) => (
-                            <motion.div
-                                key={item.title}
-                                variants={{
-                                    hidden: { opacity: 0, y: 20 },
-                                    visible: { opacity: 1, y: 0 },
-                                }}
-                                transition={{ duration: 0.5, ease: 'easeOut' }}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
-                            >
-                                <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
-                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[11px] text-emerald-300">
-                                        ✓
-                                    </span>
-                                    {item.title}
-                                </div>
-                                <p className="text-xs text-text-secondary">{item.body}</p>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-                </section>
-
                 {/* Insights (combined) */}
-                <section id={sectionIds.insights} className="space-y-6">
+                <section id={sectionIds.insights} className="space-y-6 py-12">
                     <motion.div {...fadeUp}>
                         <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                             Insights
                         </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
                             Data-driven intelligence for every decision.
                         </p>
                     </motion.div>
-                    <motion.div {...fadeUp} className="text-sm text-text-secondary">
+                    <motion.div {...fadeUp} className="text-sm font-light text-text-secondary">
                         <p>Surface risk signals, trends, and recommendations powered by spatial and document analysis.</p>
                     </motion.div>
 
@@ -891,10 +901,10 @@ function App() {
                     </div>
                 </section>
 
-                {/* Metrics / Outcomes — horizontal grid to break vertical flow */}
-                <section id={sectionIds.metrics} className="space-y-6 py-4">
+                {/* Metrics / Outcomes — horizontal grid, direct child of main */}
+                <section id={sectionIds.metrics} className="space-y-6 py-12">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                        <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
                             Outcomes
                         </h2>
                     </motion.div>
@@ -906,7 +916,7 @@ function App() {
                             hidden: {},
                             visible: { transition: { staggerChildren: 0.1 } },
                         }}
-                        className="grid grid-cols-2 gap-6 rounded-2xl border border-white/10 bg-card/70 px-8 py-10 sm:grid-cols-4 sm:gap-8"
+                        className="grid grid-cols-2 gap-6 rounded-2xl border border-white/10 bg-slate-800/40 px-8 py-10 lg:grid-cols-4 lg:gap-8"
                     >
                         {[
                             {
@@ -929,40 +939,172 @@ function App() {
                                 end: 100,
                                 suffix: '%',
                             },
-                        ].map((m) => (
+                        ].map((m, index) => (
                             <motion.div
                                 key={m.label}
                                 variants={{
                                     hidden: { opacity: 0, y: 10 },
                                     visible: { opacity: 1, y: 0 },
                                 }}
-                                className="flex flex-col items-center justify-center gap-2 text-center"
+                                transition={{ duration: 0.3, ease: 'easeOut' }}
+                                className="relative flex flex-col items-center justify-center gap-2 py-4 text-center"
                             >
+                                {/* Vertical separator: between columns; middle one only on lg (4-col) */}
+                                {index < 3 && (
+                                    <div
+                                        className={`absolute right-0 top-1/2 h-20 w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-slate-600 to-transparent pointer-events-none ${index === 1 ? 'hidden lg:block' : ''}`}
+                                        aria-hidden
+                                    />
+                                )}
                                 <div className="text-5xl font-bold tracking-tight text-[#00FFCC] sm:text-6xl">
                                     {m.prefix && <span className="mr-0.5">{m.prefix}</span>}
                                     <CountUp end={m.end} duration={2.2} />
                                     {m.suffix && <span className="ml-0.5">{m.suffix}</span>}
                                 </div>
-                                <div className="text-[11px] text-text-secondary sm:max-w-[10rem]">{m.label}</div>
+                                <div className="text-[11px] text-slate-300 sm:max-w-[10rem]">{m.label}</div>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </section>
+
+                {/* Security & Compliance — dedicated section after Outcomes */}
+                <section id={sectionIds.security} className="space-y-6 py-12">
+                    <motion.div {...fadeUp}>
+                        <h2 className="text-cyan-400 font-black uppercase tracking-[0.2em]">
+                            Security &amp; Compliance
+                        </h2>
+                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
+                            Enterprise-grade controls from day zero.
+                        </p>
+                    </motion.div>
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.3 }}
+                        variants={{
+                            hidden: {},
+                            visible: { transition: { staggerChildren: 0.12 } },
+                        }}
+                        className="grid gap-4 md:grid-cols-4"
+                    >
+                        {[
+                            {
+                                title: 'Data Encryption',
+                                body: 'Encryption in transit and at rest for all customer data.',
+                            },
+                            {
+                                title: 'SOC2-Ready Architecture',
+                                body: 'Control surfaces and logging built for formal audits.',
+                            },
+                            {
+                                title: 'Secure API Integrations',
+                                body: 'Scoped API keys, rotating secrets, and IP allowlisting.',
+                            },
+                            {
+                                title: 'Role-Based Access',
+                                body: 'Granular permissions for underwriting, operations, and dev teams.',
+                            },
+                        ].map((item) => (
+                            <motion.div
+                                key={item.title}
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    visible: { opacity: 1, y: 0 },
+                                }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4"
+                            >
+                                <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[11px] text-emerald-300">
+                                        ✓
+                                    </span>
+                                    {item.title}
+                                </div>
+                                <p className="text-xs text-text-secondary">{item.body}</p>
                             </motion.div>
                         ))}
                     </motion.div>
                 </section>
 
                 {/* No demo form — the experience starts directly with an address. */}
-                <section
-                    id={sectionIds.demo}
-                    className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
-                >
+                <section id={sectionIds.demo} className="py-12">
+                    <div className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs font-light text-text-secondary">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                         Open Access
                     </div>
-                    <p className="max-w-xl">
+                    <p className="w-full font-light text-slate-400">
                         ParcelIQ is available to try directly from the hero search — no sales form or gated demo.
                         Enter a live address above and you&apos;ll be taken into the spatial risk and AI engine
                         experience.
                     </p>
+                    </div>
                 </section>
+
+                {/* Meet the Team — final content block before Footer */}
+                <section id={sectionIds.team} className="space-y-6 pt-12 pb-6">
+                    <motion.div {...fadeUp}>
+                        <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
+                            Meet The Team
+                        </h2>
+                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
+                            The people building spatial intelligence for title.
+                        </p>
+                    </motion.div>
+                    <motion.div
+                        {...fadeUp}
+                        className="grid grid-cols-1 gap-6 md:grid-cols-3"
+                    >
+                        {TEAM_MEMBERS.map((member) => (
+                            <a
+                                key={member.name}
+                                href={member.linkedin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group relative aspect-square overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur-md transition-[border-color,transform] duration-300 ease-out hover:border-cyan-500/50"
+                            >
+                                {/* Image container — zoom on hover */}
+                                <div className="absolute inset-0">
+                                    <img
+                                        src={member.image}
+                                        alt={member.name}
+                                        className="h-full w-full object-cover grayscale contrast-125 transition-all duration-300 ease-out group-hover:scale-105 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-110"
+                                    />
+                                    {/* Bottom gradient for text legibility */}
+                                    <span
+                                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"
+                                        aria-hidden
+                                    />
+                                    {/* Dark overlay on hover */}
+                                    <span
+                                        className="pointer-events-none absolute inset-0 bg-slate-900/0 transition-all duration-300 ease-out group-hover:bg-slate-900/80"
+                                        aria-hidden
+                                    />
+                                    {/* Coordinates — top-right, visible on hover */}
+                                    <span
+                                        className="absolute right-3 top-3 z-10 text-[9px] font-mono tracking-tight text-slate-400 opacity-0 transition-all duration-300 ease-out group-hover:opacity-100"
+                                        aria-hidden
+                                    >
+                                        {member.coords}
+                                    </span>
+                                    {/* Text overlay — bottom-aligned, visible on hover */}
+                                    <div className="absolute inset-0 flex flex-col justify-end p-6 text-left opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0 translate-y-4">
+                                        <div className="font-bold text-white">{member.name}</div>
+                                        <div className="mt-0.5 text-xs font-black uppercase tracking-widest text-cyan-400">
+                                            {member.role}
+                                        </div>
+                                        <p className="mt-2 line-clamp-2 text-sm text-slate-300">
+                                            {member.bio}
+                                        </p>
+                                        <div className="mt-3 flex justify-end">
+                                            <Linkedin className="h-4 w-4 text-slate-400 transition group-hover:text-cyan-400/90" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        ))}
+                    </motion.div>
+                </section>
+                </div>
             </main>
             )}
 

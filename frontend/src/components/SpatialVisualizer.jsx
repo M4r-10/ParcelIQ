@@ -8,7 +8,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 
-function SpatialVisualizer({ analysisResult, activeLayers }) {
+function SpatialVisualizer({ analysisResult, activeLayers, resizeTrigger }) {
     const mapContainerRef = useRef(null);
     const mapRef = useRef(null);
     const [mapReady, setMapReady] = useState(false);
@@ -111,6 +111,15 @@ function SpatialVisualizer({ analysisResult, activeLayers }) {
             }
         }
     }, [activeLayers, mapReady]);
+
+    // Resize map when container size changes (e.g. expand/collapse fullscreen)
+    useEffect(() => {
+        if (!mapRef.current || !mapReady) return;
+        const id = requestAnimationFrame(() => {
+            if (mapRef.current) mapRef.current.resize();
+        });
+        return () => cancelAnimationFrame(id);
+    }, [mapReady, resizeTrigger]);
 
     // ── Placeholder when no token ──
     if (noToken) {

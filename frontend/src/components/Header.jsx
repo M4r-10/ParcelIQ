@@ -6,8 +6,9 @@ import { motion } from 'framer-motion';
 
 const navItems = [
     { id: 'hero', label: 'Home' },
-    { id: 'product', label: 'Product' },
+    { id: 'product', label: 'The Engine' },
     { id: 'about', label: 'About' },
+    { id: 'team', label: 'Team' },
 ];
 
 function Header({ onLogoClick, onHomeClick, onScrollToSection }) {
@@ -18,7 +19,7 @@ function Header({ onLogoClick, onHomeClick, onScrollToSection }) {
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="fixed inset-x-0 top-0 z-40 border-b border-white/5 bg-background/40 backdrop-blur-2xl"
         >
-            <div className="mx-auto flex w-full max-w-full items-center justify-between px-6 py-4 lg:px-8">
+            <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 lg:px-6">
                 <button
                     onClick={onLogoClick}
                     className="group flex items-center gap-3 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-left shadow-sm transition hover:border-primary/60 hover:bg-white/10"
