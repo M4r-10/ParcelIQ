@@ -13,6 +13,7 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
     const mapRef = useRef(null);
     const markerRef = useRef(null);
     const flyingRef = useRef(false);
+    const interactingRef = useRef(false);
     const [mapReady, setMapReady] = useState(false);
     const [noToken, setNoToken] = useState(false);
 
@@ -62,10 +63,30 @@ function SpatialVisualizer({ analysisResult, activeLayers, initialLocation, addr
             addLayers(map);
         });
 
-        // Slow auto-rotate (paused during flyTo)
+        // Track user interaction to pause rotation
+        let interactTimeout = null;
+        const startInteraction = () => {
+            interactingRef.current = true;
+            if (interactTimeout) clearTimeout(interactTimeout);
+        };
+        const resumeRotation = () => {
+             if (interactTimeout) clearTimeout(interactTimeout);
+             interactTimeout = setTimeout(() => { interactingRef.current = false; }, 2500);
+        };
+
+        map.on('mousedown', startInteraction);
+        map.on('dragstart', startInteraction);
+        map.on('touchstart', startInteraction);
+        map.on('wheel', startInteraction);
+
+        map.on('mouseup', resumeRotation);
+        map.on('dragend', resumeRotation);
+        map.on('touchend', resumeRotation);
+
+        // Slow auto-rotate (paused during flyTo or user interaction)
         let frame;
         const rotate = () => {
-            if (mapRef.current && !flyingRef.current) {
+            if (mapRef.current && !flyingRef.current && !interactingRef.current) {
                 mapRef.current.rotateTo((mapRef.current.getBearing() + 0.05) % 360, { duration: 0 });
             }
             frame = requestAnimationFrame(rotate);
