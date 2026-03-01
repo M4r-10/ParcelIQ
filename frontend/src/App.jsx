@@ -48,6 +48,7 @@ function App() {
     const [currentAddress, setCurrentAddress] = useState('');
     const [addressInput, setAddressInput] = useState('');
     const [pendingLocation, setPendingLocation] = useState(null);
+    const [insightFlippedIndex, setInsightFlippedIndex] = useState(null);
     const pageRef = useRef(null);
     const { scrollYProgress } = useScroll({ target: pageRef, offset: ['start 0', 'end 1'] });
     const progressWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
@@ -72,6 +73,19 @@ function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, [mode]);
+
+    const handleHomeClick = useCallback(() => {
+        if (mode === 'experience') {
+            setMode('landing');
+            setAnalysisResult(null);
+            setError(null);
+            setIsLoading(false);
+            setCurrentAddress('');
+            setAddressInput('');
+        } else {
+            handleScrollToSection('hero');
+        }
+    }, [mode, handleScrollToSection]);
 
     const handleAnalyze = useCallback(
         async (address) => {
@@ -116,10 +130,10 @@ function App() {
 
             <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.35),_transparent_60%),radial-gradient(circle_at_bottom,_rgba(15,23,42,0.85),_rgba(15,23,42,1))]" />
 
-            <Header onLogoClick={handleLogoClick} onScrollToSection={handleScrollToSection} />
+            <Header onLogoClick={handleLogoClick} onScrollToSection={handleScrollToSection} onHomeClick={handleHomeClick} />
 
             {mode === 'experience' ? (
-                <main className="pt-20">
+                <main className="pt-24">
                     <PropertyDashboard
                         analysisResult={analysisResult}
                         isLoading={isLoading}
@@ -129,9 +143,9 @@ function App() {
                     />
                 </main>
             ) : (
-                <main className="mx-auto mt-24 flex max-w-6xl flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
+                <main className="mx-auto mt-24 flex w-full max-w-full flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
                 {/* Hero */}
-                <section id={sectionIds.hero} className="grid gap-10 lg:grid-cols-2 lg:items-center">
+                <section id={sectionIds.hero} className="grid min-h-[calc(100vh-8rem)] gap-10 lg:grid-cols-2 lg:items-center">
                     <motion.div
                         {...fadeUp}
                         className="space-y-8"
@@ -141,8 +155,10 @@ function App() {
                             Spatial Property Risk Intelligence Engine
                         </div>
                         <div className="space-y-4">
-                            <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[3.1rem]">
-                                Eliminate Underwriting Blindspots with Instant Spatial Intelligence.
+                            <h1 className="bg-gradient-to-b from-blue-900 via-blue-600 to-cyan-300 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-5xl lg:text-[3.1rem]">
+                                See Every
+                                    <br />
+                                    Parcel Clearly
                             </h1>
                             <p className="max-w-xl text-sm leading-relaxed text-text-secondary">
                                 Enter an address to generate an AI-powered spatial risk view — open for underwriters,
@@ -161,11 +177,20 @@ function App() {
                                     value={addressInput}
                                     onChange={setAddressInput}
                                     onSelect={(suggestion) => {
-                                        setPendingLocation({ lat: suggestion.lat, lng: suggestion.lng });
-                                        handleAnalyze(suggestion.shortName);
+                                        if (suggestion.lat != null && suggestion.lng != null) {
+                                            setPendingLocation({ lat: suggestion.lat, lng: suggestion.lng });
+                                            handleAnalyze(suggestion.shortName);
+                                        } else {
+                                            setPendingLocation(null);
+                                            // Sample address: input already set by onChange; user clicks Analyze Property to run
+                                        }
                                     }}
                                     disabled={isLoading}
                                     placeholder="Enter a property address..."
+                                    sampleAddresses={[
+                                        '123 Main St, Irvine, CA 92618',
+                                        '456 Oak Ave, Irvine, CA 92620',
+                                    ]}
                                 />
                                 <motion.button
                                     whileHover={{ scale: 1.03 }}
@@ -182,30 +207,7 @@ function App() {
                                     {error}
                                 </div>
                             )}
-                            <div className="space-y-1 text-[11px] text-text-secondary">
-                                <div>Or try a sample:</div>
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        '123 Main St, Irvine, CA 92618',
-                                        '456 Oak Ave, Irvine, CA 92620',
-                                    ].map((sample) => (
-                                        <button
-                                            key={sample}
-                                            type="button"
-                                            onClick={() => {
-                                                setAddressInput(sample);
-                                                setPendingLocation(null);
-                                                handleAnalyze(sample);
-                                            }}
-                                            disabled={isLoading}
-                                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-text-secondary transition hover:border-primary/50 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                            {sample}
-                                        </button>
-                                    ))}
-                                </div>
                             </div>
-                        </div>
                         <div className="flex flex-wrap gap-6 text-xs text-text-secondary">
                             <div>
                                 <div className="font-semibold text-text-primary">Instant Preliminary Search</div>
@@ -322,10 +324,10 @@ function App() {
                         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
                     >
                         <div>
-                            <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                                Platform
+                            <h2 className="text-base font-bold uppercase tracking-[0.22em] text-primary">
+                                The Engine
                             </h2>
-                            <p className="mt-2 text-xl font-semibold text-text-primary">
+                            <p className="mt-2 text-3xl font-bold text-text-primary">
                                 Two engines. One spatially-aware underwriting stack.
                             </p>
                         </div>
@@ -574,10 +576,10 @@ function App() {
                 {/* About */}
                 <section id={sectionIds.about} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                        <h2 className="text-base font-bold uppercase tracking-[0.22em] text-primary">
                             About
                         </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                        <p className="mt-2 text-3xl font-bold text-text-primary">
                             Built for the next generation of title &amp; underwriting.
                         </p>
                     </motion.div>
@@ -621,7 +623,7 @@ function App() {
 
                         <motion.div
                             {...fadeUp}
-                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
+                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs text-text-secondary"
                         >
                             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                                 Credibility
@@ -684,7 +686,7 @@ function App() {
                                     visible: { opacity: 1, y: 0 },
                                 }}
                                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
+                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4"
                             >
                                 <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[11px] text-emerald-300">
@@ -712,36 +714,99 @@ function App() {
                         <p>Surface risk signals, trends, and recommendations powered by spatial and document analysis.</p>
                     </motion.div>
 
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-3" style={{ perspective: '1000px' }}>
                         {[
                             {
                                 title: 'The Future of Spatial Title Intelligence',
                                 body: 'How parcels, imagery, and LLMs reshape title search and examination.',
+                                bullets: [
+                                    'Parcel-aligned data replaces static documents for faster triage.',
+                                    'Map layers and imagery feed into explainable risk scoring.',
+                                    'LLMs summarize findings in underwriter-friendly language.',
+                                ],
                             },
                             {
                                 title: 'Why Lot Coverage Matters',
                                 body: 'Understanding buildable area, encumbrances, and climate-aware density.',
+                                bullets: [
+                                    'Buildable area vs. zoning caps drives permit and valuation risk.',
+                                    'Encumbrances and setbacks reduce effective lot coverage.',
+                                    'Climate and drainage rules increasingly tie to impervious limits.',
+                                ],
                             },
                             {
                                 title: 'Climate Risk and Underwriting',
                                 body: 'Moving from map screenshots to quantified spatial risk in your binder.',
+                                bullets: [
+                                    'Flood, wildfire, and quake exposure quantified at the parcel.',
+                                    'Spatial risk scores slot into existing underwriting workflows.',
+                                    'Clear documentation supports rep and warranty decisions.',
+                                ],
                             },
-                        ].map((post) => (
+                        ].map((post, index) => (
                             <motion.article
                                 key={post.title}
                                 {...fadeUp}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
+                                className="group relative h-[172px] w-full transition-transform duration-300 hover:-translate-y-2"
+                                style={{ transformStyle: 'preserve-3d' }}
                             >
-                                <div className="text-xs font-semibold text-text-primary">{post.title}</div>
-                                <p className="text-xs text-text-secondary">{post.body}</p>
-                                <span className="mt-1 text-[11px] text-primary">Read overview →</span>
+                                <div
+                                    className="relative h-full w-full transition-transform duration-500"
+                                    style={{
+                                        transformStyle: 'preserve-3d',
+                                        transform: insightFlippedIndex === index ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                                    }}
+                                >
+                                    {/* Front face */}
+                                    <div
+                                        className="absolute inset-0 flex flex-col justify-between rounded-xl border border-white/10 bg-card/80 p-3 transition hover:border-primary/50 hover:shadow-glow"
+                                        style={{ backfaceVisibility: 'hidden' }}
+                                    >
+                                        <div>
+                                            <div className="text-xs font-semibold text-text-primary">{post.title}</div>
+                                            <p className="mt-1 text-xs leading-snug text-text-secondary">{post.body}</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setInsightFlippedIndex(index)}
+                                            className="mt-2 w-fit rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/20"
+                                        >
+                                            Read Overview
+                                        </button>
+                                    </div>
+                                    {/* Back face */}
+                                    <div
+                                        className="absolute inset-0 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-800 p-3"
+                                        style={{
+                                            backfaceVisibility: 'hidden',
+                                            transform: 'rotateY(180deg)',
+                                        }}
+                                    >
+                                        <div className="shrink-0 text-xs font-semibold text-text-primary">{post.title}</div>
+                                        <ul className="mt-1.5 flex min-h-0 flex-1 flex-col justify-center gap-1 text-[11px] leading-snug text-slate-300">
+                                            {post.bullets.map((bullet, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <span className="mt-0.5 shrink-0 text-primary">•</span>
+                                                    <span>{bullet}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button
+                                            type="button"
+                                            onClick={() => setInsightFlippedIndex(null)}
+                                            className="mt-1.5 shrink-0 w-fit rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-text-secondary transition hover:bg-white/10 hover:text-text-primary"
+                                        >
+                                            Back
+                                        </button>
+                                    </div>
+                                </div>
                             </motion.article>
                         ))}
                     </div>
                 </section>
 
                 {/* Metrics */}
-                <section id={sectionIds.metrics} className="space-y-4">
+                <section id={sectionIds.metrics} className="space-y-6">
                     <motion.div {...fadeUp}>
                         <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                             Outcomes
@@ -755,7 +820,7 @@ function App() {
                             hidden: {},
                             visible: { transition: { staggerChildren: 0.1 } },
                         }}
-                        className="glass-panel grid gap-4 border-white/5 bg-card/70 px-4 py-3 text-xs text-text-secondary sm:grid-cols-4 transition hover:border-primary/50 hover:shadow-glow"
+                        className="glass-panel grid grid-cols-2 gap-6 border border-white/10 bg-card/70 px-6 py-8 text-xs text-text-secondary md:grid-cols-4 md:gap-8 rounded-xl shadow-card-soft"
                     >
                         {[
                             {
@@ -778,21 +843,28 @@ function App() {
                                 end: 100,
                                 suffix: '%',
                             },
-                        ].map((m) => (
+                        ].map((m, index) => (
                             <motion.div
                                 key={m.label}
                                 variants={{
                                     hidden: { opacity: 0, y: 10 },
                                     visible: { opacity: 1, y: 0 },
                                 }}
-                                className="flex flex-col gap-1"
+                                className="relative flex flex-col items-center gap-3 text-center"
                             >
-                                <div className="text-sm font-semibold text-text-primary">
+                                <div className="text-5xl font-bold tabular-nums md:text-6xl" style={{ color: '#00FFCC' }}>
                                     {m.prefix && <span className="mr-0.5">{m.prefix}</span>}
                                     <CountUp end={m.end} duration={2.2} />
                                     {m.suffix && <span className="ml-0.5">{m.suffix}</span>}
                                 </div>
-                                <div className="text-[11px] text-text-secondary">{m.label}</div>
+                                <div className="text-xs text-text-secondary max-w-[12rem]">{m.label}</div>
+                                {/* Vertical separator: gradient line on the right, hidden on last item and end-of-row on 2-col */}
+                                {index < 3 && (
+                                    <div
+                                        className={`absolute right-0 top-1/2 h-20 w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-slate-700 to-transparent ${index === 1 ? 'hidden md:block' : ''}`}
+                                        aria-hidden
+                                    />
+                                )}
                             </motion.div>
                         ))}
                     </motion.div>
@@ -801,7 +873,7 @@ function App() {
                 {/* No demo form — the experience starts directly with an address. */}
                 <section
                     id={sectionIds.demo}
-                    className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
+                    className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs text-text-secondary"
                 >
                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                         Open Access
