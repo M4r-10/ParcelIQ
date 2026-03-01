@@ -5,10 +5,9 @@
  *   1. Home — hero address input
  *   2. Dashboard — spatial viewer + risk analysis
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useRef, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import CountUp from 'react-countup';
-import { Maximize2, X, Linkedin } from 'lucide-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import RiskScoreCard from './components/RiskScoreCard';
@@ -24,7 +23,6 @@ const sectionIds = {
     aiEngine: 'ai-engine',
     process: 'process',
     about: 'about',
-    team: 'team',
     security: 'security',
     outcomes: 'outcomes',
     insights: 'insights',
@@ -32,42 +30,6 @@ const sectionIds = {
     blog: 'blog',
     demo: 'demo',
 };
-
-// Mock address suggestions for hero command-bar dropdown
-const ADDRESS_SUGGESTIONS = [
-    { address: '123 Main St, Irvine, CA 92618', county: 'Orange County', state: 'CA' },
-    { address: '456 Oak Ave, Irvine, CA 92620', county: 'Orange County', state: 'CA' },
-    { address: '789 Pine Rd, Los Angeles, CA 90001', county: 'Los Angeles County', state: 'CA' },
-    { address: '100 Commerce St, Austin, TX 78701', county: 'Travis County', state: 'TX' },
-];
-
-// Team members for Meet the Team section
-const TEAM_MEMBERS = [
-    {
-        name: 'Mario Olivas',
-        role: 'Head of Engineering',
-        bio: 'Spatial systems and mapping infrastructure. Former geospatial lead at a major title tech provider.',
-        image: 'https://via.placeholder.com/400x400/475569/94a3b8?text=',
-        linkedin: 'https://www.linkedin.com/in/marioo5/',
-        coords: 'LAT: 33.6846 | LON: -117.8265',
-    },
-    {
-        name: 'Harmeet Singh',
-        role: 'Lead Data Scientist',
-        bio: 'Risk modeling and ML pipelines. PhD in applied spatial statistics; focused on explainable AI for underwriting.',
-        image: 'https://via.placeholder.com/400x400/475569/94a3b8?text=',
-        linkedin: 'https://www.linkedin.com/in/harmeet-singh-uppal/',
-        coords: 'LAT: 34.0522 | LON: -118.2437',
-    },
-    {
-        name: 'Allyson Lay',
-        role: 'Product & Design',
-        bio: 'Title and underwriting workflows. Blends domain expertise with modern UX for spatial risk tools.',
-        image: 'https://via.placeholder.com/400x400/475569/94a3b8?text=',
-        linkedin: 'https://linkedin.com',
-        coords: 'LAT: 32.7157 | LON: -117.1611',
-    },
-];
 
 const fadeUp = {
     initial: { opacity: 0, y: 24 },
@@ -78,7 +40,6 @@ const fadeUp = {
 
 function App() {
     const [activeProductTab, setActiveProductTab] = useState('spatial');
-    const [isPlatformMapFullscreen, setIsPlatformMapFullscreen] = useState(false);
     const [expandedExplain, setExpandedExplain] = useState(false);
     const [mode, setMode] = useState('landing'); // 'landing' | 'experience'
     const [analysisResult, setAnalysisResult] = useState(null);
@@ -86,10 +47,7 @@ function App() {
     const [error, setError] = useState(null);
     const [currentAddress, setCurrentAddress] = useState('');
     const [addressInput, setAddressInput] = useState('');
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [inputFocused, setInputFocused] = useState(false);
-    const [insightFlippedIndex, setInsightFlippedIndex] = useState(null);
-    const searchContainerRef = useRef(null);
+    const [pendingLocation, setPendingLocation] = useState(null);
     const pageRef = useRef(null);
     const { scrollYProgress } = useScroll({ target: pageRef, offset: ['start 0', 'end 1'] });
     const progressWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
@@ -99,19 +57,8 @@ function App() {
         const el = document.getElementById(targetId);
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else if (mode === 'experience') {
-            setMode('landing');
-            setAnalysisResult(null);
-            setError(null);
-            setIsLoading(false);
-            setCurrentAddress('');
-            setAddressInput('');
-            setTimeout(() => {
-                const el2 = document.getElementById(targetId);
-                if (el2) el2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 200);
         }
-    }, [mode]);
+    }, []);
 
     const handleLogoClick = useCallback(() => {
         if (mode === 'experience') {
@@ -125,19 +72,6 @@ function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, [mode]);
-
-    const handleHomeClick = useCallback(() => {
-        if (mode === 'experience') {
-            setMode('landing');
-            setAnalysisResult(null);
-            setError(null);
-            setIsLoading(false);
-            setCurrentAddress('');
-            setAddressInput('');
-        } else {
-            handleScrollToSection('hero');
-        }
-    }, [mode, handleScrollToSection]);
 
     const handleAnalyze = useCallback(
         async (address) => {
@@ -170,32 +104,6 @@ function App() {
         setPendingLocation(null);
     }, []);
 
-    // Close address dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
-                setShowSuggestions(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    // Exit platform map fullscreen on Escape
-    useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === 'Escape') setIsPlatformMapFullscreen(false);
-        };
-        if (isPlatformMapFullscreen) {
-            document.addEventListener('keydown', handleEsc);
-            return () => document.removeEventListener('keydown', handleEsc);
-        }
-    }, [isPlatformMapFullscreen]);
-
-    const filteredSuggestions = ADDRESS_SUGGESTIONS.filter((s) =>
-        s.address.toLowerCase().includes(addressInput.trim().toLowerCase())
-    );
-
     return (
         <div
             ref={pageRef}
@@ -208,36 +116,10 @@ function App() {
 
             <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.35),_transparent_60%),radial-gradient(circle_at_bottom,_rgba(15,23,42,0.85),_rgba(15,23,42,1))]" />
 
-            <Header onLogoClick={handleLogoClick} onHomeClick={handleHomeClick} onScrollToSection={handleScrollToSection} />
-
-            {/* Platform 3D Map fullscreen overlay — matches PropertyDashboard expand */}
-            <AnimatePresence>
-                {isPlatformMapFullscreen && (
-                    <motion.div
-                        key="platform-map-fullscreen"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="fixed inset-0 z-50 flex flex-col bg-background-subtle"
-                    >
-                        <div className="relative flex-1 min-h-0">
-                            <SpatialVisualizer resizeTrigger={isPlatformMapFullscreen} />
-                            <button
-                                type="button"
-                                onClick={() => setIsPlatformMapFullscreen(false)}
-                                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 backdrop-blur-md transition hover:bg-slate-800/80 hover:text-white"
-                                aria-label="Exit fullscreen"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <Header onLogoClick={handleLogoClick} onScrollToSection={handleScrollToSection} />
 
             {mode === 'experience' ? (
-                <main className="pt-24">
+                <main className="pt-20">
                     <PropertyDashboard
                         analysisResult={analysisResult}
                         isLoading={isLoading}
@@ -247,10 +129,9 @@ function App() {
                     />
                 </main>
             ) : (
-                <main className="mx-auto mt-24 flex w-full max-w-full flex-col px-4 pb-6 pt-10 lg:px-6 lg:pt-12">
-                <div className="mx-auto w-full max-w-7xl space-y-0">
+                <main className="mx-auto mt-24 flex max-w-6xl flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
                 {/* Hero */}
-                <section id={sectionIds.hero} className="grid gap-10 py-12 lg:grid-cols-2 lg:items-center">
+                <section id={sectionIds.hero} className="grid gap-10 lg:grid-cols-2 lg:items-center">
                     <motion.div
                         {...fadeUp}
                         className="space-y-8"
@@ -260,103 +141,70 @@ function App() {
                             Spatial Property Risk Intelligence Engine
                         </div>
                         <div className="space-y-4">
-                            <h1 className="bg-gradient-to-r from-sky-300 via-primary to-blue-400 bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl lg:text-[3.1rem]">
-                                See Every
-                                <br />
-                                Parcel Clearly
+                            <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[3.1rem]">
+                                Eliminate Underwriting Blindspots with Instant Spatial Intelligence.
                             </h1>
-                            <p className="max-w-xl text-sm font-light leading-relaxed text-slate-400">
+                            <p className="max-w-xl text-sm leading-relaxed text-text-secondary">
                                 Enter an address to generate an AI-powered spatial risk view — open for underwriters,
                                 examiners, and real estate teams without a sales gate.
                             </p>
                         </div>
                         <div className="space-y-3">
-                            <div ref={searchContainerRef} className="relative">
-                                <form
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        handleAnalyze(addressInput);
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleAnalyze(addressInput);
+                                }}
+                                className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 shadow-card-soft transition hover:border-primary/50 hover:shadow-glow sm:flex-row sm:items-center"
+                            >
+                                <AddressAutocomplete
+                                    value={addressInput}
+                                    onChange={setAddressInput}
+                                    onSelect={(suggestion) => {
+                                        setPendingLocation({ lat: suggestion.lat, lng: suggestion.lng });
+                                        handleAnalyze(suggestion.shortName);
                                     }}
-                                    className={`flex flex-col gap-2 rounded-2xl border bg-slate-900/80 p-3 shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] backdrop-blur-md transition-all duration-300 sm:flex-row sm:items-center ${
-                                        inputFocused
-                                            ? 'border-[#00FFCC]/50 shadow-[0_0_15px_rgba(0,255,204,0.3)]'
-                                            : 'border-white/10 hover:border-primary/50 hover:shadow-glow'
-                                    }`}
+                                    disabled={isLoading}
+                                    placeholder="Enter a property address..."
+                                />
+                                <motion.button
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    type="submit"
+                                    disabled={isLoading || !addressInput.trim()}
+                                    className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-primary-flood disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    <div className="flex flex-1 items-center gap-3 px-2">
-                                        <span className="text-lg opacity-80" aria-hidden="true">📍</span>
-                                        <input
-                                            type="text"
-                                            value={addressInput}
-                                            onChange={(e) => setAddressInput(e.target.value)}
-                                            onFocus={() => {
-                                                setInputFocused(true);
-                                                setShowSuggestions(true);
-                                            }}
-                                            onBlur={() => setInputFocused(false)}
-                                            placeholder="Enter a property address..."
-                                            className="h-11 w-full bg-transparent text-sm text-text-primary placeholder:text-text-secondary/60 outline-none"
-                                            disabled={isLoading}
-                                        />
-                                    </div>
-                                    <motion.button
-                                        whileHover={{ scale: 1.03 }}
-                                        whileTap={{ scale: 0.97 }}
-                                        type="submit"
-                                        disabled={isLoading || !addressInput.trim()}
-                                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                        {isLoading ? 'Analyzing…' : 'Analyze Property'}
-                                    </motion.button>
-                                </form>
-                                {/* Address suggestion dropdown */}
-                                {showSuggestions && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -4 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-auto rounded-xl border border-white/10 bg-slate-900/95 py-2 shadow-xl backdrop-blur-md"
-                                    >
-                                        {filteredSuggestions.length > 0 ? (
-                                            filteredSuggestions.map((suggestion) => (
-                                                <button
-                                                    key={suggestion.address}
-                                                    type="button"
-                                                    onMouseDown={(e) => {
-                                                        e.preventDefault();
-                                                        setAddressInput(suggestion.address);
-                                                        setShowSuggestions(false);
-                                                    }}
-                                                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-white/5"
-                                                >
-                                                    <span className="mt-0.5 shrink-0 text-text-secondary/80" aria-hidden="true">
-                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        </svg>
-                                                    </span>
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="font-semibold text-text-primary">
-                                                            {suggestion.address}
-                                                        </div>
-                                                        <div className="mt-0.5 text-[11px] text-text-secondary">
-                                                            {suggestion.county}, {suggestion.state}
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <div className="px-4 py-3 text-[11px] text-text-secondary">
-                                                No suggestions. Type a full address and press Enter.
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                )}
-                            </div>
+                                    {isLoading ? 'Analyzing…' : 'Analyze Property'}
+                                </motion.button>
+                            </form>
                             {error && (
                                 <div className="text-xs font-medium text-red-400">
                                     {error}
                                 </div>
                             )}
+                            <div className="space-y-1 text-[11px] text-text-secondary">
+                                <div>Or try a sample:</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        '123 Main St, Irvine, CA 92618',
+                                        '456 Oak Ave, Irvine, CA 92620',
+                                    ].map((sample) => (
+                                        <button
+                                            key={sample}
+                                            type="button"
+                                            onClick={() => {
+                                                setAddressInput(sample);
+                                                setPendingLocation(null);
+                                                handleAnalyze(sample);
+                                            }}
+                                            disabled={isLoading}
+                                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-text-secondary transition hover:border-primary/50 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                            {sample}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                         <div className="flex flex-wrap gap-6 text-xs text-text-secondary">
                             <div>
@@ -468,16 +316,16 @@ function App() {
                 </section>
 
                 {/* Product Tabs */}
-                <section id={sectionIds.product} className="space-y-8 py-12">
+                <section id={sectionIds.product} className="space-y-8">
                     <motion.div
                         {...fadeUp}
                         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
                     >
                         <div>
-                            <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
-                                The Engine
+                            <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                                Platform
                             </h2>
-                            <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
+                            <p className="mt-2 text-xl font-semibold text-text-primary">
                                 Two engines. One spatially-aware underwriting stack.
                             </p>
                         </div>
@@ -529,16 +377,8 @@ function App() {
                                                 </span>
                                             </div>
                                             <div className="flex flex-1 items-center justify-center">
-                                                <div className="relative h-44 w-full max-w-xs">
+                                                <div className="h-44 w-full max-w-xs">
                                                     <SpatialVisualizer />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsPlatformMapFullscreen(true)}
-                                                        className="absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 backdrop-blur-md transition hover:bg-slate-800/80 hover:text-white"
-                                                        aria-label="Full screen"
-                                                    >
-                                                        <Maximize2 className="h-4 w-4" />
-                                                    </button>
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between text-[11px] text-text-secondary">
@@ -669,15 +509,13 @@ function App() {
                     </div>
                 </section>
 
-                <div className="h-px w-full bg-slate-800/50" aria-hidden />
-
                 {/* How it works */}
-                <section id={sectionIds.process} className="space-y-6 py-12">
+                <section id={sectionIds.process} className="space-y-6">
                     <motion.div {...fadeUp}>
                         <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                             How It Works
                         </h2>
-                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
+                        <p className="mt-2 text-xl font-semibold text-text-primary">
                             From address to explainable spatial risk — in four steps.
                         </p>
                     </motion.div>
@@ -733,22 +571,20 @@ function App() {
                     </motion.div>
                 </section>
 
-                <div className="h-px w-full bg-slate-800/50" aria-hidden />
-
                 {/* About */}
-                <section id={sectionIds.about} className="space-y-6 py-12">
+                <section id={sectionIds.about} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
+                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                             About
                         </h2>
-                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
+                        <p className="mt-2 text-xl font-semibold text-text-primary">
                             Built for the next generation of title &amp; underwriting.
                         </p>
                     </motion.div>
                     <div className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)]">
                         <motion.div
                             {...fadeUp}
-                            className="space-y-4 text-sm font-light text-text-secondary"
+                            className="space-y-4 text-sm text-text-secondary"
                         >
                             <p>
                                 ParcelIQ transforms static title reports into spatial intelligence. We help title
@@ -785,7 +621,7 @@ function App() {
 
                         <motion.div
                             {...fadeUp}
-                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs font-light text-text-secondary"
+                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
                         >
                             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                                 Credibility
@@ -802,184 +638,17 @@ function App() {
                     </div>
                 </section>
 
-                {/* Insights (combined) */}
-                <section id={sectionIds.insights} className="space-y-6 py-12">
+                {/* Security */}
+                <section id={sectionIds.security} className="space-y-6">
                     <motion.div {...fadeUp}>
                         <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                            Insights
-                        </h2>
-                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
-                            Data-driven intelligence for every decision.
-                        </p>
-                    </motion.div>
-                    <motion.div {...fadeUp} className="text-sm font-light text-text-secondary">
-                        <p>Surface risk signals, trends, and recommendations powered by spatial and document analysis.</p>
-                    </motion.div>
-
-                    <div className="grid gap-4 md:grid-cols-3" style={{ perspective: '1000px' }}>
-                        {[
-                            {
-                                title: 'The Future of Spatial Title Intelligence',
-                                body: 'How parcels, imagery, and LLMs reshape title search and examination.',
-                                bullets: [
-                                    'Parcel-aligned data replaces static documents for faster triage.',
-                                    'Map layers and imagery feed into explainable risk scoring.',
-                                    'LLMs summarize findings in underwriter-friendly language.',
-                                ],
-                            },
-                            {
-                                title: 'Why Lot Coverage Matters',
-                                body: 'Understanding buildable area, encumbrances, and climate-aware density.',
-                                bullets: [
-                                    'Buildable area and lot coverage drive valuation and risk.',
-                                    'Encumbrances and setbacks surface before they delay closing.',
-                                    'Climate-aware density keeps exposure in the picture.',
-                                ],
-                            },
-                            {
-                                title: 'Climate Risk and Underwriting',
-                                body: 'Moving from map screenshots to quantified spatial risk in your binder.',
-                                bullets: [
-                                    'Flood, fire, and other perils quantified at the parcel level.',
-                                    'Spatial risk feeds into pricing and underwriting decisions.',
-                                    'Clear documentation supports audits and renewals.',
-                                ],
-                            },
-                        ].map((post, index) => (
-                            <motion.article
-                                key={post.title}
-                                {...fadeUp}
-                                className="group relative h-[180px] w-full transition-transform duration-300 hover:-translate-y-2"
-                            >
-                                <div
-                                    className="relative h-full w-full transition-transform duration-500"
-                                    style={{
-                                        transformStyle: 'preserve-3d',
-                                        transform: insightFlippedIndex === index ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                                    }}
-                                >
-                                    {/* Front face */}
-                                    <div
-                                        className="absolute inset-0 flex flex-col gap-1.5 rounded-xl border border-white/5 bg-card/80 p-3 transition hover:border-primary/50 hover:shadow-glow"
-                                        style={{ backfaceVisibility: 'hidden' }}
-                                    >
-                                        <div className="text-xs font-semibold text-text-primary">{post.title}</div>
-                                        <p className="flex-1 text-xs text-text-secondary">{post.body}</p>
-                                        <button
-                                            type="button"
-                                            onClick={() => setInsightFlippedIndex(index)}
-                                            className="inline-flex w-fit items-center justify-center rounded-lg bg-primary/20 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/30"
-                                        >
-                                            Read overview
-                                        </button>
-                                    </div>
-                                    {/* Back face */}
-                                    <div
-                                        className="absolute inset-0 flex flex-col rounded-xl border border-white/10 bg-slate-800 p-3"
-                                        style={{
-                                            backfaceVisibility: 'hidden',
-                                            transform: 'rotateY(180deg)',
-                                        }}
-                                    >
-                                        <div className="text-xs font-semibold text-text-primary">{post.title}</div>
-                                        <ul className="mt-1.5 flex flex-1 flex-col gap-1 text-[11px] text-text-secondary">
-                                            {post.bullets.map((bullet, i) => (
-                                                <li key={i} className="flex items-start gap-2">
-                                                    <span className="mt-0.5 shrink-0 text-primary">•</span>
-                                                    <span>{bullet}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <button
-                                            type="button"
-                                            onClick={() => setInsightFlippedIndex(null)}
-                                            className="mt-1.5 w-fit rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-text-secondary transition hover:bg-white/10 hover:text-text-primary"
-                                        >
-                                            Back
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.article>
-                        ))}
-                    </div>
-                </section>
-
-                {/* Metrics / Outcomes — horizontal grid, direct child of main */}
-                <section id={sectionIds.metrics} className="space-y-6 py-12">
-                    <motion.div {...fadeUp}>
-                        <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
-                            Outcomes
-                        </h2>
-                    </motion.div>
-                    <motion.div
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, amount: 0.3 }}
-                        variants={{
-                            hidden: {},
-                            visible: { transition: { staggerChildren: 0.1 } },
-                        }}
-                        className="grid grid-cols-2 gap-6 rounded-2xl border border-white/10 bg-slate-800/40 px-8 py-10 lg:grid-cols-4 lg:gap-8"
-                    >
-                        {[
-                            {
-                                label: 'Faster underwriting decisions',
-                                end: 45,
-                                suffix: '%',
-                            },
-                            {
-                                label: 'Reduced closing delays',
-                                end: 30,
-                                suffix: '%',
-                            },
-                            {
-                                label: 'Improved risk visibility',
-                                end: 3,
-                                prefix: 'x',
-                            },
-                            {
-                                label: 'Climate-adjusted risk modeling',
-                                end: 100,
-                                suffix: '%',
-                            },
-                        ].map((m, index) => (
-                            <motion.div
-                                key={m.label}
-                                variants={{
-                                    hidden: { opacity: 0, y: 10 },
-                                    visible: { opacity: 1, y: 0 },
-                                }}
-                                transition={{ duration: 0.3, ease: 'easeOut' }}
-                                className="relative flex flex-col items-center justify-center gap-2 py-4 text-center"
-                            >
-                                {/* Vertical separator: between columns; middle one only on lg (4-col) */}
-                                {index < 3 && (
-                                    <div
-                                        className={`absolute right-0 top-1/2 h-20 w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-slate-600 to-transparent pointer-events-none ${index === 1 ? 'hidden lg:block' : ''}`}
-                                        aria-hidden
-                                    />
-                                )}
-                                <div className="text-5xl font-bold tracking-tight text-[#00FFCC] sm:text-6xl">
-                                    {m.prefix && <span className="mr-0.5">{m.prefix}</span>}
-                                    <CountUp end={m.end} duration={2.2} />
-                                    {m.suffix && <span className="ml-0.5">{m.suffix}</span>}
-                                </div>
-                                <div className="text-[11px] text-slate-300 sm:max-w-[10rem]">{m.label}</div>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-                </section>
-
-                {/* Security & Compliance — dedicated section after Outcomes */}
-                <section id={sectionIds.security} className="space-y-6 py-12">
-                    <motion.div {...fadeUp}>
-                        <h2 className="text-cyan-400 font-black uppercase tracking-[0.2em]">
                             Security &amp; Compliance
                         </h2>
-                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
+                        <p className="mt-2 text-xl font-semibold text-text-primary">
                             Enterprise-grade controls from day zero.
                         </p>
                     </motion.div>
+
                     <motion.div
                         initial="hidden"
                         whileInView="visible"
@@ -1015,7 +684,7 @@ function App() {
                                     visible: { opacity: 1, y: 0 },
                                 }}
                                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4"
+                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
                             >
                                 <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[11px] text-emerald-300">
@@ -1029,85 +698,120 @@ function App() {
                     </motion.div>
                 </section>
 
+                {/* Insights (combined) */}
+                <section id={sectionIds.insights} className="space-y-6">
+                    <motion.div {...fadeUp}>
+                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                            Insights
+                        </h2>
+                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                            Data-driven intelligence for every decision.
+                        </p>
+                    </motion.div>
+                    <motion.div {...fadeUp} className="text-sm text-text-secondary">
+                        <p>Surface risk signals, trends, and recommendations powered by spatial and document analysis.</p>
+                    </motion.div>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                        {[
+                            {
+                                title: 'The Future of Spatial Title Intelligence',
+                                body: 'How parcels, imagery, and LLMs reshape title search and examination.',
+                            },
+                            {
+                                title: 'Why Lot Coverage Matters',
+                                body: 'Understanding buildable area, encumbrances, and climate-aware density.',
+                            },
+                            {
+                                title: 'Climate Risk and Underwriting',
+                                body: 'Moving from map screenshots to quantified spatial risk in your binder.',
+                            },
+                        ].map((post) => (
+                            <motion.article
+                                key={post.title}
+                                {...fadeUp}
+                                className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4 transition hover:border-primary/50 hover:shadow-glow"
+                            >
+                                <div className="text-xs font-semibold text-text-primary">{post.title}</div>
+                                <p className="text-xs text-text-secondary">{post.body}</p>
+                                <span className="mt-1 text-[11px] text-primary">Read overview →</span>
+                            </motion.article>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Metrics */}
+                <section id={sectionIds.metrics} className="space-y-4">
+                    <motion.div {...fadeUp}>
+                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                            Outcomes
+                        </h2>
+                    </motion.div>
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.3 }}
+                        variants={{
+                            hidden: {},
+                            visible: { transition: { staggerChildren: 0.1 } },
+                        }}
+                        className="glass-panel grid gap-4 border-white/5 bg-card/70 px-4 py-3 text-xs text-text-secondary sm:grid-cols-4 transition hover:border-primary/50 hover:shadow-glow"
+                    >
+                        {[
+                            {
+                                label: 'Faster underwriting decisions',
+                                end: 45,
+                                suffix: '%',
+                            },
+                            {
+                                label: 'Reduced closing delays',
+                                end: 30,
+                                suffix: '%',
+                            },
+                            {
+                                label: 'Improved risk visibility',
+                                end: 3,
+                                prefix: 'x',
+                            },
+                            {
+                                label: 'Climate-adjusted risk modeling',
+                                end: 100,
+                                suffix: '%',
+                            },
+                        ].map((m) => (
+                            <motion.div
+                                key={m.label}
+                                variants={{
+                                    hidden: { opacity: 0, y: 10 },
+                                    visible: { opacity: 1, y: 0 },
+                                }}
+                                className="flex flex-col gap-1"
+                            >
+                                <div className="text-sm font-semibold text-text-primary">
+                                    {m.prefix && <span className="mr-0.5">{m.prefix}</span>}
+                                    <CountUp end={m.end} duration={2.2} />
+                                    {m.suffix && <span className="ml-0.5">{m.suffix}</span>}
+                                </div>
+                                <div className="text-[11px] text-text-secondary">{m.label}</div>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </section>
+
                 {/* No demo form — the experience starts directly with an address. */}
-                <section id={sectionIds.demo} className="py-12">
-                    <div className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs font-light text-text-secondary">
+                <section
+                    id={sectionIds.demo}
+                    className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs text-text-secondary transition hover:border-primary/50 hover:shadow-glow"
+                >
                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                         Open Access
                     </div>
-                    <p className="w-full font-light text-slate-400">
+                    <p className="max-w-xl">
                         ParcelIQ is available to try directly from the hero search — no sales form or gated demo.
                         Enter a live address above and you&apos;ll be taken into the spatial risk and AI engine
                         experience.
                     </p>
-                    </div>
                 </section>
-
-                {/* Meet the Team — final content block before Footer */}
-                <section id={sectionIds.team} className="space-y-6 pt-12 pb-6">
-                    <motion.div {...fadeUp}>
-                        <h2 className="text-base font-bold uppercase tracking-[0.2em] text-primary">
-                            Meet The Team
-                        </h2>
-                        <p className="mt-2 text-base font-semibold tracking-tight text-text-primary">
-                            The people building spatial intelligence for title.
-                        </p>
-                    </motion.div>
-                    <motion.div
-                        {...fadeUp}
-                        className="grid grid-cols-1 gap-6 md:grid-cols-3"
-                    >
-                        {TEAM_MEMBERS.map((member) => (
-                            <a
-                                key={member.name}
-                                href={member.linkedin}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group relative aspect-square overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur-md transition-[border-color,transform] duration-300 ease-out hover:border-cyan-500/50"
-                            >
-                                {/* Image container — zoom on hover */}
-                                <div className="absolute inset-0">
-                                    <img
-                                        src={member.image}
-                                        alt={member.name}
-                                        className="h-full w-full object-cover grayscale contrast-125 transition-all duration-300 ease-out group-hover:scale-105 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-110"
-                                    />
-                                    {/* Bottom gradient for text legibility */}
-                                    <span
-                                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"
-                                        aria-hidden
-                                    />
-                                    {/* Dark overlay on hover */}
-                                    <span
-                                        className="pointer-events-none absolute inset-0 bg-slate-900/0 transition-all duration-300 ease-out group-hover:bg-slate-900/80"
-                                        aria-hidden
-                                    />
-                                    {/* Coordinates — top-right, visible on hover */}
-                                    <span
-                                        className="absolute right-3 top-3 z-10 text-[9px] font-mono tracking-tight text-slate-400 opacity-0 transition-all duration-300 ease-out group-hover:opacity-100"
-                                        aria-hidden
-                                    >
-                                        {member.coords}
-                                    </span>
-                                    {/* Text overlay — bottom-aligned, visible on hover */}
-                                    <div className="absolute inset-0 flex flex-col justify-end p-6 text-left opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0 translate-y-4">
-                                        <div className="font-bold text-white">{member.name}</div>
-                                        <div className="mt-0.5 text-xs font-black uppercase tracking-widest text-cyan-400">
-                                            {member.role}
-                                        </div>
-                                        <p className="mt-2 line-clamp-2 text-sm text-slate-300">
-                                            {member.bio}
-                                        </p>
-                                        <div className="mt-3 flex justify-end">
-                                            <Linkedin className="h-4 w-4 text-slate-400 transition group-hover:text-cyan-400/90" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        ))}
-                    </motion.div>
-                </section>
-                </div>
             </main>
             )}
 
