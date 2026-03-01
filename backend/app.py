@@ -20,6 +20,7 @@ from services.risk_scoring import compute_risk_score, get_risk_tier
 from services.cv_coverage import estimate_lot_coverage
 from services.satellite_client import fetch_satellite_image
 from services.ai_summary import generate_risk_summary
+from services.ai_chat import chat_with_assistant
 from services.geocoding import geocode_address, fetch_parcel_boundary, fetch_building_footprint
 from services.fema_client import query_flood_zone, fetch_historical_flood_claims
 from services.spatial_analysis import estimate_easement_encroachment
@@ -349,6 +350,30 @@ def _mock_coverage_fallback() -> dict:
         "confidence": 0.5,
         "cv_delta": 0.0,
     }
+
+
+# ---------------------------------------------------------------------------
+# POST /api/chat — Virtual Assistant Chat Endpoint
+# ---------------------------------------------------------------------------
+@app.route("/api/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    property_json = data.get("propertyData", {})
+    user_prompt = data.get("prompt", "")
+    mode = data.get("mode", "regular")
+    history = data.get("history", [])
+
+    if not user_prompt:
+        return jsonify({"error": "Prompt is required"}), 400
+
+    response = chat_with_assistant(
+        property_json=property_json,
+        user_prompt=user_prompt,
+        mode=mode,
+        history=history,
+    )
+
+    return jsonify(response)
 
 
 # ---------------------------------------------------------------------------

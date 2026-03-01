@@ -141,6 +141,8 @@ function RiskScoreCard({ riskData, coverageData, isLoading, score }) {
                 </div>
                 <div className="flex flex-col gap-5">
                     {factors && Object.entries(factors).map(([key, factor], idx) => {
+                        if (key === 'cv_delta') return null;
+                        
                         // ── Unavailable factor ──
                         if (factor.unavailable) {
                             return (
