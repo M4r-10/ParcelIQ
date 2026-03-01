@@ -24,3 +24,11 @@ Thumbs.db
 *.egg-info/
 dist/
 build/
+
+# Machine Learning Models
+data/models/
+*.pkl
+
+# CV Image Caches
+data/satellite_cache/*.png
+data/enhanced_cache/*.png

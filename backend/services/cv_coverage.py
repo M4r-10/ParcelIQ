@@ -373,11 +373,13 @@ def _get_map_scale(
             return 0.25  # default for high-res imagery
 
         avg_lat = (min_lat + max_lat) / 2.0
+        # 1 degree of latitude is ~364,000 feet
         ft_per_deg_lat = 364000.0
+        # 1 degree of longitude is ~364,000 feet * cos(latitude)
         ft_per_deg_lon = 364000.0 * np.cos(np.radians(avg_lat))
 
-        width_ft = (max_lon - min_lon) * ft_per_deg_lon
-        height_ft = (max_lat - min_lat) * ft_per_deg_lat
+        width_ft = abs(max_lon - min_lon) * ft_per_deg_lon
+        height_ft = abs(max_lat - min_lat) * ft_per_deg_lat
 
         total_sqft = width_ft * height_ft
         total_pixels = image.shape[0] * image.shape[1]

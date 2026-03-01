@@ -59,8 +59,12 @@ def fetch_earthquake_zones(center_lat: float, center_lng: float) -> dict:
         # Mag 4.5 = 0.4, Mag 6.0 = 0.7, Mag 7.5+ = 1.0
         severity = min(max((mag - 4.0) / 3.5, 0.3), 1.0)
         
-        # Format the year
-        year = datetime.fromtimestamp(time_ms / 1000).year if time_ms else None
+        # Format the year — use try/except because Windows can't handle
+        # negative timestamps (pre-1970 earthquakes from START_DATE=1950)
+        try:
+            year = datetime.utcfromtimestamp(time_ms / 1000).year if time_ms else None
+        except (OSError, ValueError, OverflowError):
+            year = None
 
         geojson_features.append({
             "type": "Feature",
