@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import RiskScoreCard from './components/RiskScoreCard';
 import SpatialVisualizer from './components/SpatialVisualizer';
 import PropertyDashboard from './components/PropertyDashboard';
+import AddressAutocomplete from './components/AddressAutocomplete';
 import { analyzeProperty } from './services/api';
 
 const sectionIds = {
@@ -152,7 +153,7 @@ function App() {
                 console.error('Analysis failed:', err);
                 setError(
                     err.response?.data?.error ||
-                        'Unable to reach the analysis server. Make sure the backend is running on port 5000.',
+                        'Unable to reach the analysis server. Make sure the backend is running.',
                 );
             } finally {
                 setIsLoading(false);
@@ -166,6 +167,7 @@ function App() {
         setAnalysisResult(null);
         setError(null);
         setIsLoading(false);
+        setPendingLocation(null);
     }, []);
 
     // Close address dropdown when clicking outside
@@ -240,6 +242,7 @@ function App() {
                         analysisResult={analysisResult}
                         isLoading={isLoading}
                         address={currentAddress}
+                        initialLocation={pendingLocation}
                         onBack={handleBackToLanding}
                     />
                 </main>
