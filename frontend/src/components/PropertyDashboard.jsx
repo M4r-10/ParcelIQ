@@ -27,6 +27,22 @@ function PropertyDashboard({ analysisResult, isLoading, address, onBack, initial
 
         const { risk, ai_summary, derived_factors } = analysisResult;
         
+        const formatForecast = (forecast) => {
+            if (!forecast || forecast.status === 'paused: missing authoritative data') return 'None';
+            return [
+                `- 3-Year Projection: ${forecast.forecast_3_year}`,
+                `- 5-Year Projection: ${forecast.forecast_5_year}`,
+                `- Downside Risk: ${forecast.downside_risk_scenario}`,
+                `- Insurance Escalation: ${forecast.insurance_escalation_scenario}`,
+                `\n*Basis: ${forecast.assumptions_and_basis} (Confidence: ${forecast.confidence_level})*`
+            ].join('\n');
+        };
+
+        const formatMitigations = (mits) => {
+            if (!mits || mits.length === 0) return 'None';
+            return mits.map((m, i) => `${i + 1}. **${m.strategy_name}**\n   ${m.description}\n   *Impact: ${m.expected_financial_impact}*`).join('\n\n');
+        };
+
         const formatImpacts = (impacts) => {
             if (!impacts || impacts.length === 0) return 'None';
             return impacts.map(i => `- ${i.category}: ${i.estimate}`).join('\n');
@@ -50,6 +66,12 @@ ${ai_summary?.explanation || 'No AI summary available yet.'}
 
 ## Recommended Actions
 ${formatRecs(ai_summary?.recommendations)}
+
+## Financial Forecast
+${formatForecast(ai_summary?.financial_forecast)}
+
+## Mitigation Strategies
+${formatMitigations(ai_summary?.mitigation_strategies)}
 
 ## Estimated Financial Impacts
 ${formatImpacts(ai_summary?.financial_impacts)}

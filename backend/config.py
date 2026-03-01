@@ -26,6 +26,9 @@ class Config:
     # Melissa Property Data
     MELISSA_API_KEY = os.getenv("MELISSA_API_KEY", "")
 
+    # HasData Zillow API
+    HASDATA_API_KEY = os.getenv("HASDATA_API_KEY", "")
+
     # Risk scoring weights
     WEIGHT_FLOOD = 0.30
     WEIGHT_EASEMENT = 0.25

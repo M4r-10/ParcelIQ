@@ -24,6 +24,7 @@ from services.geocoding import geocode_address, fetch_parcel_boundary, fetch_bui
 from services.fema_client import query_flood_zone, fetch_historical_flood_claims
 from services.spatial_analysis import estimate_easement_encroachment
 from services.melissa_client import lookup_property, compute_ownership_from_sale_info
+from services.hasdata_client import fetch_zillow_data
 from data.mock_data import SAMPLE_PARCELS
 
 app = Flask(__name__)
@@ -107,6 +108,11 @@ def analyze_property():
     melissa_data = lookup_property(address)
 
     # ------------------------------------------------------------------
+    # Step 3.8: Fetch Financial Data from HasData Zillow API
+    # ------------------------------------------------------------------
+    financial_data = fetch_zillow_data(address)
+
+    # ------------------------------------------------------------------
     # Step 4: Derive risk factors — use real data only, no heuristics
     # ------------------------------------------------------------------
 
@@ -176,6 +182,8 @@ def analyze_property():
         "melissa_data_source": "County Records" if melissa_data else None,
     }
 
+    property_data["financial_data"] = financial_data
+
     # ------------------------------------------------------------------
     # Step 5: Run ML risk scoring pipeline
     # ------------------------------------------------------------------
@@ -184,6 +192,7 @@ def analyze_property():
     # ------------------------------------------------------------------
     # Step 6: Generate AI summary (grounded in SHAP + risk factors)
     # ------------------------------------------------------------------
+    risk_result["financial_data"] = financial_data
     summary_result = generate_risk_summary(risk_result, address=address)
 
     # ------------------------------------------------------------------
@@ -207,6 +216,7 @@ def analyze_property():
         "ai_summary": summary_result,
         "flood_data": flood_data,
         "melissa_data": melissa_data,
+        "financial_data": financial_data,
         "ai_flood_zone": ai_flood_zone,
         "wildfire_zones": wildfire_zones,
         "earthquake_zones": earthquake_zones,

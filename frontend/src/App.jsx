@@ -192,8 +192,9 @@ function App() {
                                     disabled={isLoading}
                                     placeholder="Enter a property address..."
                                     sampleAddresses={[
-                                        '123 Main St, Irvine, CA 92618',
-                                        '456 Oak Ave, Irvine, CA 92620',
+                                        '21231 Avenida Planicie, Lake Forest, CA 92630',
+                                        '25180 Juno St, Menifee, CA 92586',
+                                        '141 Old Field Ln, Milford, CT 06460'
                                     ]}
                                 />
                                 <motion.button
