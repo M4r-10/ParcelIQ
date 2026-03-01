@@ -15,6 +15,7 @@ import SpatialVisualizer from './components/SpatialVisualizer';
 import PropertyDashboard from './components/PropertyDashboard';
 import AddressAutocomplete from './components/AddressAutocomplete';
 import { analyzeProperty } from './services/api';
+import { Linkedin } from 'lucide-react';
 
 const sectionIds = {
     hero: 'hero',
@@ -27,6 +28,7 @@ const sectionIds = {
     outcomes: 'outcomes',
     insights: 'insights',
     metrics: 'metrics',
+    team: 'team',
     blog: 'blog',
     demo: 'demo',
 };
@@ -121,7 +123,7 @@ function App() {
     return (
         <div
             ref={pageRef}
-            className="relative min-h-screen bg-background text-text-primary"
+            className="relative min-h-screen bg-background text-text-primary antialiased"
         >
             <motion.div
                 style={{ width: progressWidth }}
@@ -160,7 +162,7 @@ function App() {
                                     <br />
                                     Parcel Clearly
                             </h1>
-                            <p className="max-w-xl text-sm leading-relaxed text-text-secondary">
+                            <p className="max-w-xl text-slate-400 font-light leading-relaxed text-sm">
                                 Enter an address to generate an AI-powered spatial risk view — open for underwriters,
                                 examiners, and real estate teams without a sales gate.
                             </p>
@@ -171,7 +173,7 @@ function App() {
                                     e.preventDefault();
                                     handleAnalyze(addressInput);
                                 }}
-                                className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 shadow-card-soft transition hover:border-primary/50 hover:shadow-glow sm:flex-row sm:items-center"
+                                className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-2 shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] transition hover:border-primary/50 hover:shadow-glow sm:flex-row sm:items-center"
                             >
                                 <AddressAutocomplete
                                     value={addressInput}
@@ -197,7 +199,7 @@ function App() {
                                     whileTap={{ scale: 0.97 }}
                                     type="submit"
                                     disabled={isLoading || !addressInput.trim()}
-                                    className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-primary-flood disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {isLoading ? 'Analyzing…' : 'Analyze Property'}
                                 </motion.button>
@@ -208,13 +210,13 @@ function App() {
                                 </div>
                             )}
                             </div>
-                        <div className="flex flex-wrap gap-6 text-xs text-text-secondary">
+                        <div className="flex flex-wrap gap-6 text-xs text-slate-400 font-light leading-relaxed">
                             <div>
-                                <div className="font-semibold text-text-primary">Instant Preliminary Search</div>
+                                <div className="font-normal text-white">Instant Preliminary Search</div>
                                 Automated spatial checks across flood, easements, and coverage.
                             </div>
                             <div>
-                                <div className="font-semibold text-text-primary">Clear Titles, Faster Closings</div>
+                                <div className="font-normal text-white">Clear Titles, Faster Closings</div>
                                 Designed with underwriters, examiners, and closers in mind.
                             </div>
                         </div>
@@ -324,10 +326,11 @@ function App() {
                         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
                     >
                         <div>
-                            <h2 className="text-base font-bold uppercase tracking-[0.22em] text-primary">
+                            <div className="w-8 h-px bg-cyan-500/50 mb-3" aria-hidden />
+                            <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                                 The Engine
                             </h2>
-                            <p className="mt-2 text-3xl font-bold text-text-primary">
+                            <p className="text-3xl font-bold tracking-tight text-white mb-8">
                                 Two engines. One spatially-aware underwriting stack.
                             </p>
                         </div>
@@ -514,10 +517,10 @@ function App() {
                 {/* How it works */}
                 <section id={sectionIds.process} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             How It Works
                         </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
                             From address to explainable spatial risk — in four steps.
                         </p>
                     </motion.div>
@@ -564,10 +567,10 @@ function App() {
                                         Step {i + 1}
                                     </span>
                                 </div>
-                                <div className="mt-2 text-sm font-semibold text-text-primary">
+                                <div className="mt-2 text-sm font-normal text-white">
                                     {card.title}
                                 </div>
-                                <p className="text-xs text-text-secondary">{card.body}</p>
+                                <p className="text-xs text-slate-400 font-light leading-relaxed">{card.body}</p>
                             </motion.div>
                         ))}
                     </motion.div>
@@ -576,17 +579,18 @@ function App() {
                 {/* About */}
                 <section id={sectionIds.about} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-base font-bold uppercase tracking-[0.22em] text-primary">
+                        <div className="w-8 h-px bg-cyan-500/50 mb-3" aria-hidden />
+                        <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                             About
                         </h2>
-                        <p className="mt-2 text-3xl font-bold text-text-primary">
+                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
                             Built for the next generation of title &amp; underwriting.
                         </p>
                     </motion.div>
                     <div className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)]">
                         <motion.div
                             {...fadeUp}
-                            className="space-y-4 text-sm text-text-secondary"
+                            className="space-y-4 text-slate-400 font-light leading-relaxed text-sm"
                         >
                             <p>
                                 ParcelIQ transforms static title reports into spatial intelligence. We help title
@@ -595,26 +599,26 @@ function App() {
                             </p>
                             <div className="grid gap-4 sm:grid-cols-3">
                                 <div>
-                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+                                    <div className="text-xs font-normal uppercase tracking-[0.18em] text-cyan-400/90">
                                         Mission
                                     </div>
-                                    <p className="mt-1 text-xs text-text-secondary">
+                                    <p className="mt-1 text-xs text-slate-400 font-light leading-relaxed">
                                         Deliver spatially-aware risk tools that slot cleanly into title workflows.
                                     </p>
                                 </div>
                                 <div>
-                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+                                    <div className="text-xs font-normal uppercase tracking-[0.18em] text-cyan-400/90">
                                         Vision
                                     </div>
-                                    <p className="mt-1 text-xs text-text-secondary">
+                                    <p className="mt-1 text-xs text-slate-400 font-light leading-relaxed">
                                         Every closing decision sees beyond the document stack into the parcel itself.
                                     </p>
                                 </div>
                                 <div>
-                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+                                    <div className="text-xs font-normal uppercase tracking-[0.18em] text-cyan-400/90">
                                         Why Now
                                     </div>
-                                    <p className="mt-1 text-xs text-text-secondary">
+                                    <p className="mt-1 text-xs text-slate-400 font-light leading-relaxed">
                                         Climate risk, zoning pressure, and capital intensity demand better tools.
                                     </p>
                                 </div>
@@ -623,9 +627,9 @@ function App() {
 
                         <motion.div
                             {...fadeUp}
-                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-xs text-text-secondary"
+                            className="glass-panel space-y-3 border-white/10 bg-card/80 p-5 text-slate-400 font-light leading-relaxed text-xs"
                         >
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-2">
                                 Credibility
                             </div>
                             <p>
@@ -643,10 +647,10 @@ function App() {
                 {/* Security */}
                 <section id={sectionIds.security} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Security &amp; Compliance
                         </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
                             Enterprise-grade controls from day zero.
                         </p>
                     </motion.div>
@@ -688,13 +692,13 @@ function App() {
                                 transition={{ duration: 0.5, ease: 'easeOut' }}
                                 className="glass-panel flex flex-col gap-2 border-white/5 bg-card/80 p-4"
                             >
-                                <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
+                                <div className="flex items-center gap-2 text-xs font-normal text-white">
                                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[11px] text-emerald-300">
                                         ✓
                                     </span>
                                     {item.title}
                                 </div>
-                                <p className="text-xs text-text-secondary">{item.body}</p>
+                                <p className="text-xs text-slate-400 font-light leading-relaxed">{item.body}</p>
                             </motion.div>
                         ))}
                     </motion.div>
@@ -703,14 +707,14 @@ function App() {
                 {/* Insights (combined) */}
                 <section id={sectionIds.insights} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Insights
                         </h2>
-                        <p className="mt-2 text-xl font-semibold text-text-primary">
+                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
                             Data-driven intelligence for every decision.
                         </p>
                     </motion.div>
-                    <motion.div {...fadeUp} className="text-sm text-text-secondary">
+                    <motion.div {...fadeUp} className="text-sm text-slate-400 font-light leading-relaxed">
                         <p>Surface risk signals, trends, and recommendations powered by spatial and document analysis.</p>
                     </motion.div>
 
@@ -808,7 +812,7 @@ function App() {
                 {/* Metrics */}
                 <section id={sectionIds.metrics} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Outcomes
                         </h2>
                     </motion.div>
@@ -870,15 +874,87 @@ function App() {
                     </motion.div>
                 </section>
 
+                {/* Meet the Team */}
+                <section id={sectionIds.team} className="space-y-6 scroll-mt-24">
+                    <div>
+                        <div className="w-8 h-px bg-cyan-500/50 mb-3" aria-hidden />
+                        <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
+                            Meet the Team
+                        </h2>
+                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                            Building the future of spatial risk intelligence.
+                        </p>
+                    </div>
+                    <div className="grid min-h-[400px] grid-cols-1 gap-10 md:grid-cols-3 md:gap-12">
+                        {[
+                            { name: 'Mario Olivas', role: 'Co-Founder & Product', bio: 'Driving product vision and spatial data infrastructure for title and underwriting.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/marioo5/', image: '' },
+                            { name: 'Harmeet Singh', role: 'Co-Founder & Engineering', bio: 'Architecting AI and geospatial pipelines that power explainable risk scoring.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/harmeet-singh-uppal/', image: '' },
+                            { name: 'Allyson Lay', role: 'Co-Founder & Operations', bio: 'Scaling operations and partnerships to bring parcel intelligence to every closing.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/allysonlay/', image: '' },
+                        ].map((member) => (
+                            <div
+                                key={member.name}
+                                className="group relative flex w-full justify-center"
+                            >
+                                {/* Card: fixed height so all cards are identical */}
+                                <div className="relative h-[400px] w-full max-w-[280px] overflow-hidden rounded-xl border border-slate-700 bg-slate-900/50 shadow-lg">
+                                    {/* Image container: fixed height so image fills entire card face */}
+                                    <div className="relative h-[400px] w-full overflow-hidden">
+                                        {member.image ? (
+                                            <img
+                                                src={member.image}
+                                                alt={member.name}
+                                                className="h-full w-full object-cover grayscale contrast-125 transition-transform duration-300 ease-out group-hover:scale-105"
+                                            />
+                                        ) : (
+                                            <div
+                                                className="h-full w-full bg-slate-800 grayscale contrast-125 transition-transform duration-300 ease-out group-hover:scale-105"
+                                                style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(51, 65, 85, 0.9), rgba(30, 41, 59, 1))' }}
+                                                aria-hidden
+                                            />
+                                        )}
+                                        {/* Text overlay: hidden until hover, extra padding so text doesn't conflict with LinkedIn icon */}
+                                        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent p-6 pb-12 pr-12 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                            <h3 className="text-xl font-bold tracking-tight text-white">
+                                                {member.name}
+                                            </h3>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400/90">
+                                                {member.name === 'Mario Olivas' ? (
+                                                <>
+                                                    Co-Founder &<br />Product
+                                                </>
+                                            ) : (
+                                                member.role
+                                            )}
+                                            </p>
+                                            <p className="mt-1.5 line-clamp-2 text-slate-400 font-light leading-relaxed text-xs">
+                                                {member.bio}
+                                            </p>
+                                            <a
+                                                href={member.linkedin}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="absolute bottom-4 right-4 rounded p-1.5 text-slate-400 transition hover:text-cyan-400"
+                                                aria-label={`${member.name} on LinkedIn`}
+                                            >
+                                                <Linkedin className="h-4 w-4" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
                 {/* No demo form — the experience starts directly with an address. */}
                 <section
                     id={sectionIds.demo}
-                    className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-xs text-text-secondary"
+                    className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-slate-400 font-light leading-relaxed text-xs"
                 >
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                         Open Access
                     </div>
-                    <p className="max-w-xl">
+                    <p className="w-full text-slate-400 font-light leading-relaxed">
                         ParcelIQ is available to try directly from the hero search — no sales form or gated demo.
                         Enter a live address above and you&apos;ll be taken into the spatial risk and AI engine
                         experience.
