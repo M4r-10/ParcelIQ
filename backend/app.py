@@ -116,12 +116,25 @@ def analyze_property():
     else:
         prop_age = None  # unavailable — shown as such in UI
 
-    # Lot coverage: Melissa building/lot sqft, or geometric from OSM
-    if melissa_data and melissa_data.get("building_sqft") and melissa_data.get("lot_sqft"):
+    # Lot coverage: Prioritize CV Segmenter, then Melissa, then OSM Geometric
+    cv_delta = None
+    if cv_result and cv_result.get("method") == "cv_segmentation":
+        # Strongly prioritize AI Computer Vision result
+        coverage_pct = cv_result["lot_coverage_pct"]
+        # If we have Melissa building sqft, compute cv_delta here
+        if melissa_data and melissa_data.get("building_sqft"):
+            official_sqft = melissa_data["building_sqft"]
+            cv_sqft = cv_result.get("building_area_sqft", 0)
+            if official_sqft > 0:
+                cv_delta = abs(cv_sqft - official_sqft) / official_sqft
+                cv_result["cv_delta"] = round(cv_delta, 3)
+                cv_result["official_sqft"] = official_sqft
+    elif melissa_data and melissa_data.get("building_sqft") and melissa_data.get("lot_sqft"):
+        # Fallback 1: Melissa County Assessor data
         melissa_coverage = melissa_data["building_sqft"] / melissa_data["lot_sqft"]
         coverage_pct = min(1.0, melissa_coverage)
-    # else: keep the geometric coverage_pct from Step 2 (real data)
-
+    # else: keep the geometric coverage_pct from Step 2 (Fallback 2: OSM geometric)
+    
     # Easement: real geometric analysis from parcel/building shapes
     easement_pct = estimate_easement_encroachment(parcel, building)
 
@@ -134,13 +147,7 @@ def analyze_property():
             "ownership_anomaly_score": None,
         }
 
-    # CV delta: only when Melissa sqft + geometric sqft both exist
-    cv_delta = None
-    if melissa_data and melissa_data.get("building_sqft") and coverage_result.get("building_area_sqft"):
-        geometric_sqft = coverage_result["building_area_sqft"]
-        official_sqft = melissa_data["building_sqft"]
-        if official_sqft > 0:
-            cv_delta = abs(geometric_sqft - official_sqft) / official_sqft
+    # (Moved CV delta logic into the lot coverage prioritization block)
 
     # Fetch wildfire perimeters early (used for both risk scoring and response)
     wildfire_zones = fetch_wildfire_zones(lat, lng)
@@ -194,7 +201,7 @@ def analyze_property():
         "location": location,
         "parcel": parcel,
         "building": building,
-        "coverage": coverage_result,
+        "coverage": cv_result if (cv_result and cv_result.get("method") == "cv_segmentation") else coverage_result,
         "cv_coverage": cv_result,
         "risk": risk_result,
         "ai_summary": summary_result,
