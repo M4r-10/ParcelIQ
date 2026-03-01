@@ -406,14 +406,14 @@ export default function DataDashboard({ analysisResult, address, isAgentMode, se
                                 <Plot
                                     data={[
                                         {
-                                            // Deterministic neighborhood comps based on the address seed
-                                            x: Array.from({length: 20}, (_, i) => 40 + (seededRandom(addressHash + i * 10) * 50)), // Deal Health
-                                            y: Array.from({length: 20}, (_, i) => -50000 + (seededRandom(addressHash + i * 10 + 1) * 100000)), // Price Impact
-                                            z: Array.from({length: 20}, (_, i) => 1000 + (seededRandom(addressHash + i * 10 + 2) * 3000)), // Insurance
+                                            // Deterministic neighborhood comps tightly surrounding the selected property
+                                            x: Array.from({length: 20}, (_, i) => dealHealthScore + (seededRandom(addressHash + i * 10) * 10 - 5)), // +/- 5 from property health
+                                            y: Array.from({length: 20}, (_, i) => priceImpactDollar + (seededRandom(addressHash + i * 10 + 1) * 10000 - 5000)), // +/- $5k from property impact
+                                            z: Array.from({length: 20}, (_, i) => (1500 + (insuranceImpact.score * 25)) + (seededRandom(addressHash + i * 10 + 2) * 200 - 100)), // +/- $100 from property insurance
                                             mode: 'markers',
                                             type: 'scatter3d',
                                             name: 'Comps',
-                                            marker: { color: '#60a5fa', size: 4, opacity: 0.6 }
+                                            marker: { color: '#60a5fa', size: 5, opacity: 0.7 }
                                         },
                                         {
                                             // This property
@@ -423,21 +423,21 @@ export default function DataDashboard({ analysisResult, address, isAgentMode, se
                                             mode: 'markers',
                                             type: 'scatter3d',
                                             name: 'This Property',
-                                            marker: { color: '#fbbf24', size: 8, symbol: 'diamond' }
+                                            marker: { color: '#fbbf24', size: 8, symbol: 'diamond', opacity: 1 }
                                         }
                                     ]}
                                     layout={{
                                         autosize: true,
-                                        margin: { l: 0, r: 0, b: 0, t: 0 },
+                                        margin: { l: 30, r: 30, b: 30, t: 30 }, // Added margins so titles aren't cropped
                                         paper_bgcolor: 'transparent',
                                         plot_bgcolor: 'transparent',
                                         scene: {
-                                            xaxis: { title: 'Deal Health', backgroundcolor: 'transparent', gridcolor: '#ffffff20', showbackground: false, zerolinecolor: '#ffffff50' },
-                                            yaxis: { title: 'Price Impact ($)', backgroundcolor: 'transparent', gridcolor: '#ffffff20', showbackground: false, zerolinecolor: '#ffffff50' },
-                                            zaxis: { title: 'Insurance ($)', backgroundcolor: 'transparent', gridcolor: '#ffffff20', showbackground: false, zerolinecolor: '#ffffff50' },
-                                            camera: { eye: { x: 1.5, y: 1.5, z: 1.2 } }
+                                            xaxis: { title: { text: 'Deal Health', font: {color: '#f8fafc'} }, backgroundcolor: 'transparent', gridcolor: '#ffffff20', showbackground: true, zerolinecolor: '#ffffff50', tickfont: {color: '#94a3b8'} },
+                                            yaxis: { title: { text: 'Price Impact ($)', font: {color: '#f8fafc'} }, backgroundcolor: 'transparent', gridcolor: '#ffffff20', showbackground: true, zerolinecolor: '#ffffff50', tickfont: {color: '#94a3b8'} },
+                                            zaxis: { title: { text: 'Insurance ($)', font: {color: '#f8fafc'} }, backgroundcolor: 'transparent', gridcolor: '#ffffff20', showbackground: true, zerolinecolor: '#ffffff50', tickfont: {color: '#94a3b8'} },
+                                            camera: { eye: { x: 1.6, y: -1.6, z: 1.0 } }
                                         },
-                                        legend: { orientation: 'h', y: 1.1, font: { color: '#94a3b8' } }
+                                        legend: { orientation: 'h', y: 1.1, font: { color: '#f8fafc' } }
                                     }}
                                     config={{ displayModeBar: false, responsive: true }}
                                     style={{ width: '100%', height: '100%' }}

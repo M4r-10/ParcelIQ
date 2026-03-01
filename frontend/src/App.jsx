@@ -363,7 +363,7 @@ function App() {
                                             <div className="flex items-center justify-between text-[11px] text-text-secondary">
                                                 <span>Flood • Easements • Buildable Envelope</span>
                                                 <span className="text-xs font-semibold text-sky-300">
-                                                    Lot Coverage: <CountUp end={68} duration={2.2} />%
+                                                    Lot Coverage: <CountUp end={35} duration={2.2} />%
                                                 </span>
                                             </div>
                                         </div>
@@ -393,7 +393,7 @@ function App() {
                                                     Lot Coverage
                                                 </div>
                                                 <div className="mt-1 text-2xl font-semibold text-text-primary">
-                                                    <CountUp end={68} duration={2.2} />%
+                                                    <CountUp end={35} duration={2.2} />%
                                                 </div>
                                                 <div className="mt-1 text-[11px] text-text-secondary">
                                                     Within current zoning envelope.

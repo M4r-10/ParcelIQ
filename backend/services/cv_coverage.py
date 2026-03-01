@@ -400,17 +400,17 @@ def _get_map_scale(
 def _mock_coverage_result() -> dict:
     """Return a realistic mock coverage result for demo purposes."""
     return {
-        "lot_coverage_pct": 0.68,
-        "building_area_sqft": 2720.0,
-        "parcel_area_sqft": 4000.0,
-        "zoning_max_coverage": 0.70,
-        "expansion_risk": "HIGH",
+        "lot_coverage_pct": 0.35, # More realistic than 68%
+        "building_area_sqft": 2400.0,
+        "parcel_area_sqft": 6850.0,
+        "zoning_max_coverage": 0.40,
+        "expansion_risk": "MEDIUM",
         "method": "mock",
-        "confidence": 0.95,
+        "confidence": 0.85,
         "explanation": (
-            "Current lot coverage: 68%. "
-            "Zoning max: 70%. "
-            "Only 2% margin remaining -- expansion risk is HIGH."
+            "Current lot coverage: 35%. "
+            "Zoning max: 40%. "
+            "Moderate margin remaining."
         ),
     }
 def _regularize_geometry(mask: np.ndarray, epsilon_factor: float = 0.015) -> np.ndarray:
