@@ -20,27 +20,22 @@ function Header({ onLogoClick, onScrollToSection, onHomeClick }) {
             className="fixed inset-x-0 top-0 z-40 border-b border-white/5 bg-background/40 backdrop-blur-2xl"
         >
             <div className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-                <button
-                    onClick={onLogoClick}
-                    className="group flex items-center gap-3 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-left shadow-sm transition hover:border-primary/60 hover:bg-white/10"
-                >
-                    <div className="mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-full">
-                        <img
-                            src="/logo.png"
-                            alt="ParcelIQ"
-                            className="h-full w-full scale-[1.35] object-cover"
-                            style={{ objectPosition: '50% 50%' }}
-                        />
-                    </div>
-                    <div>
-                        <div className="text-sm font-semibold tracking-tight text-text-primary">
+                    <button
+                        onClick={onLogoClick}
+                        className="group flex items-center gap-3 rounded-full border border-white/5 bg-white/5 px-5 py-1.5 text-left shadow-sm transition hover:border-primary/60 hover:bg-white/10"
+                    >
+                        <div className="mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-full">
+                            <img
+                                src="/logo.png"
+                                alt="ParcelIQ"
+                                className="h-full w-full scale-[1.35] object-cover"
+                                style={{ objectPosition: '50% 50%' }}
+                            />
+                        </div>
+                        <div className="text-base font-semibold tracking-tight text-text-primary">
                             ParcelIQ
                         </div>
-                        <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary">
-                            Spatial Risk Intelligence
-                        </div>
-                    </div>
-                </button>
+                    </button>
 
                 <nav className="hidden items-center gap-6 text-sm text-text-secondary md:flex">
                     {navItems.map((item) => (

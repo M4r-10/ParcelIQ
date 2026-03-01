@@ -14,6 +14,7 @@ import RiskScoreCard from './components/RiskScoreCard';
 import SpatialVisualizer from './components/SpatialVisualizer';
 import PropertyDashboard from './components/PropertyDashboard';
 import AddressAutocomplete from './components/AddressAutocomplete';
+import HeroParcelMapPreview from './components/HeroParcelMapPreview';
 import { analyzeProperty } from './services/api';
 import { Linkedin } from 'lucide-react';
 
@@ -43,6 +44,7 @@ const fadeUp = {
 function App() {
     const [activeProductTab, setActiveProductTab] = useState('spatial');
     const [expandedExplain, setExpandedExplain] = useState(false);
+    const [expandedBios, setExpandedBios] = useState({});
     const [mode, setMode] = useState('landing'); // 'landing' | 'experience'
     const [analysisResult, setAnalysisResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -145,7 +147,7 @@ function App() {
                     />
                 </main>
             ) : (
-                <main className="mx-auto mt-24 flex w-full max-w-full flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
+                <main className="mx-auto mt-24 flex w-full max-w-full flex-col gap-24 px-6 pb-24 pt-4 lg:px-8 lg:pt-6">
                 {/* Hero */}
                 <section id={sectionIds.hero} className="grid min-h-[calc(100vh-8rem)] gap-10 lg:grid-cols-2 lg:items-center">
                     <motion.div
@@ -238,78 +240,62 @@ function App() {
                         >
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.4),_transparent_60%),linear-gradient(145deg,#020617,#020617_20%,#0f172a_60%,#1d4ed8_100%)]" />
                             <div className="relative flex h-full flex-col justify-between p-5">
-                                <div className="flex items-center justify-between text-xs text-text-secondary">
-                                    <span className="inline-flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 text-[10px] uppercase tracking-[0.14em]">
+                                <div className="flex items-center justify-between font-mono text-[10px] text-text-secondary">
+                                    <span className="inline-flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 font-bold uppercase tracking-[0.14em] text-cyan-400">
                                         Spatial Parcel Preview
                                     </span>
-                                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+                                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-light text-emerald-300">
                                         Buildable: 68%
                                     </span>
                                 </div>
 
                                 <div className="flex flex-1 items-center justify-center">
-                                    <div className="relative h-40 w-40">
-                                        <div className="absolute inset-2 rounded-3xl border border-cyan-400/40 bg-sky-500/10 shadow-[0_0_35px_rgba(56,189,248,0.7)]" />
-                                        <motion.div
-                                            animate={{ opacity: [0.15, 0.35, 0.15] }}
-                                            transition={{ duration: 6, repeat: Infinity }}
-                                            className="absolute inset-0 rounded-[2rem] border border-primary-flood/60"
-                                        />
-                                        <motion.div
-                                            animate={{ opacity: [0.25, 0.6, 0.25] }}
-                                            transition={{ duration: 8, repeat: Infinity }}
-                                            className="absolute inset-6 rounded-[2.2rem] border border-primary/40"
-                                        />
-                                        <motion.div
-                                            animate={{ opacity: [0.15, 0.35, 0.15] }}
-                                            transition={{ duration: 5, repeat: Infinity }}
-                                            className="absolute inset-10 rounded-[2.4rem] border border-sky-300/40"
-                                        />
-                                        <motion.div
-                                            animate={{ opacity: [0.4, 0.8, 0.4] }}
-                                            transition={{ duration: 4, repeat: Infinity }}
-                                            className="absolute inset-[22px] rounded-[1.9rem] border-2 border-emerald-400/80 shadow-[0_0_40px_rgba(74,222,128,0.8)]"
-                                        />
-                                        <motion.div
-                                            animate={{ opacity: [0.2, 0.85, 0.2] }}
-                                            transition={{ duration: 3.5, repeat: Infinity }}
-                                            className="absolute inset-[32px] rounded-[1.6rem] border-2 border-primary-flood/90 shadow-[0_0_40px_rgba(59,130,246,0.9)]"
-                                        />
-                                        <motion.div
-                                            animate={{ opacity: [0.2, 0.7, 0.2] }}
-                                            transition={{ duration: 4.5, repeat: Infinity }}
-                                            className="absolute inset-[42px] rounded-[1.3rem] border-2 border-sky-200/80 shadow-[0_0_40px_rgba(186,230,253,0.8)]"
-                                        />
-                                        <motion.div
-                                            animate={{ opacity: [0.5, 0.2, 0.5] }}
-                                            transition={{ duration: 5.5, repeat: Infinity }}
-                                            className="absolute inset-[52px] rounded-[1rem] border-2 border-red-400/80 shadow-[0_0_30px_rgba(248,113,113,0.9)]"
-                                        />
+                                    {/* Scanner frame: thin cyan box, leader lines, labels, map background, scan line */}
+                                    <div className="relative flex h-[200px] w-[220px] items-center justify-center">
+                                        {/* Leader lines: thin diagonals from box corners to labels */}
+                                        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 200" fill="none">
+                                            <line x1="30" y1="20" x2="8" y2="2" stroke="rgba(34,211,238,0.65)" strokeWidth="0.5" />
+                                            <line x1="30" y1="180" x2="8" y2="198" stroke="rgba(34,211,238,0.65)" strokeWidth="0.5" />
+                                            <line x1="190" y1="180" x2="212" y2="198" stroke="rgba(34,211,238,0.65)" strokeWidth="0.5" />
+                                        </svg>
+                                        {/* Labels at leader line endpoints */}
+                                        <span className="absolute left-2 top-0 font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400" style={{ transform: 'translateY(-100%)', marginTop: -4 }}>FRONT SETBACK: 20&apos;</span>
+                                        <span className="absolute left-2 bottom-0 font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400" style={{ transform: 'translateY(100%)', marginBottom: -4 }}>REAR EASEMENT: 5&apos;</span>
+                                        <span className="absolute right-2 bottom-0 font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400" style={{ transform: 'translate(100%, 100%)', marginBottom: -4, marginRight: -4 }}>LOT COVERAGE: 38%</span>
+
+                                        <div className="relative h-40 w-40 shrink-0">
+                                            {/* Thin cyan bounding box around the 3D parcel preview */}
+                                            <div className="absolute inset-0 rounded-lg border border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.25)]" />
+                                            {/* Horizontal scanning line (moves slowly up and down) */}
+                                            <div className="parcel-scan-line absolute left-0 right-0 top-0 h-px bg-cyan-400/70 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                            {/* Map background with parcel area being scanned */}
+                                            <HeroParcelMapPreview />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-3 text-[10px] text-text-secondary">
+                                <div className="grid grid-cols-3 gap-3 font-mono text-[10px] text-text-secondary">
                                     <div className="rounded-lg bg-black/40 p-2">
-                                        <div className="text-[10px] uppercase tracking-[0.14em] text-sky-300">
+                                        <div className="font-bold uppercase tracking-[0.14em] text-cyan-400">
                                             Flood
                                         </div>
-                                        <div className="mt-1 text-xs font-semibold text-text-primary">
+                                        <div className="mt-1 font-light text-text-primary">
                                             Partial Zone AE
                                         </div>
                                     </div>
                                     <div className="rounded-lg bg-black/40 p-2">
-                                        <div className="text-[10px] uppercase tracking-[0.14em] text-emerald-300">
+                                        <div className="font-bold uppercase tracking-[0.14em] text-cyan-400">
                                             Lot Coverage
                                         </div>
-                                        <div className="mt-1 text-xs font-semibold text-text-primary">
+                                        <div className="mt-1 font-light text-text-primary">
                                             <CountUp end={68} duration={2.4} />%
                                         </div>
                                     </div>
                                     <div className="rounded-lg bg-black/40 p-2">
-                                        <div className="text-[10px] uppercase tracking-[0.14em] text-rose-300">
+                                        <div className="font-bold uppercase tracking-[0.14em] text-cyan-400">
                                             Easements
                                         </div>
-                                        <div className="mt-1 text-xs font-semibold text-text-primary">
+                                        <div className="mt-1 font-light text-text-primary">
                                             Utility &amp; Drainage
                                         </div>
                                     </div>
@@ -330,7 +316,7 @@ function App() {
                             <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                                 The Engine
                             </h2>
-                            <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                            <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                                 Two engines. One spatially-aware underwriting stack.
                             </p>
                         </div>
@@ -517,10 +503,10 @@ function App() {
                 {/* How it works */}
                 <section id={sectionIds.process} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             How It Works
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             From address to explainable spatial risk — in four steps.
                         </p>
                     </motion.div>
@@ -583,7 +569,7 @@ function App() {
                         <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                             About
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Built for the next generation of title &amp; underwriting.
                         </p>
                     </motion.div>
@@ -647,10 +633,10 @@ function App() {
                 {/* Security */}
                 <section id={sectionIds.security} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Security &amp; Compliance
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Enterprise-grade controls from day zero.
                         </p>
                     </motion.div>
@@ -707,10 +693,10 @@ function App() {
                 {/* Insights (combined) */}
                 <section id={sectionIds.insights} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Insights
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Data-driven intelligence for every decision.
                         </p>
                     </motion.div>
@@ -812,7 +798,7 @@ function App() {
                 {/* Metrics */}
                 <section id={sectionIds.metrics} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Outcomes
                         </h2>
                     </motion.div>
@@ -881,24 +867,23 @@ function App() {
                         <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                             Meet the Team
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Building the future of spatial risk intelligence.
                         </p>
                     </div>
                     <div className="grid min-h-[400px] grid-cols-1 gap-10 md:grid-cols-3 md:gap-12">
                         {[
-                            { name: 'Mario Olivas', role: 'Co-Founder & Product', bio: 'Driving product vision and spatial data infrastructure for title and underwriting.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/marioo5/', image: '' },
-                            { name: 'Harmeet Singh', role: 'Co-Founder & Engineering', bio: 'Architecting AI and geospatial pipelines that power explainable risk scoring.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/harmeet-singh-uppal/', image: '' },
-                            { name: 'Allyson Lay', role: 'Co-Founder & Operations', bio: 'Scaling operations and partnerships to bring parcel intelligence to every closing.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/allysonlay/', image: '' },
+                            { name: 'Mario Olivas', role: 'Co-Founder & Product', bio: 'Turning spatial data and product thinking into systems CS students can build on—from capstone ideas to full-stack risk tools.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/marioo5/', image: '' },
+                            { name: 'Harmeet Singh', role: 'Co-Founder & Engineering', bio: 'Building AI and geospatial pipelines that make explainable risk scoring accessible for students learning ML and data engineering.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/harmeet-singh-uppal/', image: '' },
+                            { name: 'Allyson Lay', role: 'Co-Founder & Operations', bio: 'Connecting CS talent with real-world impact—operations and partnerships that turn coursework into production-ready intelligence.', coordinates: '33.68°N, 117.83°W', linkedin: 'https://www.linkedin.com/in/allysonlay/', image: '' },
                         ].map((member) => (
                             <div
                                 key={member.name}
                                 className="group relative flex w-full justify-center"
                             >
-                                {/* Card: fixed height so all cards are identical */}
+                                {/* Card: fixed height; text overlay revealed on hover */}
                                 <div className="relative h-[400px] w-full max-w-[280px] overflow-hidden rounded-xl border border-slate-700 bg-slate-900/50 shadow-lg">
-                                    {/* Image container: fixed height so image fills entire card face */}
-                                    <div className="relative h-[400px] w-full overflow-hidden">
+                                    <div className="relative h-full w-full overflow-hidden">
                                         {member.image ? (
                                             <img
                                                 src={member.image}
@@ -912,23 +897,32 @@ function App() {
                                                 aria-hidden
                                             />
                                         )}
-                                        {/* Text overlay: hidden until hover, extra padding so text doesn't conflict with LinkedIn icon */}
-                                        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent p-6 pb-12 pr-12 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                        {/* Text overlay: revealed on hover, scrollable when bio expanded */}
+                                        <div className="absolute inset-0 flex flex-col justify-end overflow-y-auto bg-gradient-to-t from-slate-900 via-slate-900/85 to-transparent p-6 pb-12 pr-12 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                             <h3 className="text-xl font-bold tracking-tight text-white">
                                                 {member.name}
                                             </h3>
                                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400/90">
                                                 {member.name === 'Mario Olivas' ? (
-                                                <>
-                                                    Co-Founder &<br />Product
-                                                </>
-                                            ) : (
-                                                member.role
-                                            )}
+                                                    <>
+                                                        Co-Founder &<br />Product
+                                                    </>
+                                                ) : (
+                                                    member.role
+                                                )}
                                             </p>
-                                            <p className="mt-1.5 line-clamp-2 text-slate-400 font-light leading-relaxed text-xs">
-                                                {member.bio}
-                                            </p>
+                                            <div className="mt-1.5 flex flex-col">
+                                                <p className={`text-slate-400 font-light leading-relaxed text-xs ${expandedBios[member.name] ? '' : 'line-clamp-2'}`}>
+                                                    {member.bio}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setExpandedBios((prev) => ({ ...prev, [member.name]: !prev[member.name] })); }}
+                                                    className="mt-0.5 self-start text-xs font-light text-slate-400 hover:underline"
+                                                >
+                                                    {expandedBios[member.name] ? 'show less' : '...more'}
+                                                </button>
+                                            </div>
                                             <a
                                                 href={member.linkedin}
                                                 target="_blank"
@@ -951,7 +945,7 @@ function App() {
                     id={sectionIds.demo}
                     className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-slate-400 font-light leading-relaxed text-xs"
                 >
-                    <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                    <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                         Open Access
                     </div>
                     <p className="w-full text-slate-400 font-light leading-relaxed">
