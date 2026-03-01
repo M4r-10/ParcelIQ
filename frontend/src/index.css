@@ -7,10 +7,12 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
+  height: 100%;
 }
 
 body {
   @apply bg-background text-text-primary font-['Inter',system-ui,sans-serif] antialiased;
+  min-height: 100%;
 }
 
 /* Scroll targets: leave room for fixed header so section title is visible */
