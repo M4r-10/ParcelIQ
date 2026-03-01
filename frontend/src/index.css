@@ -58,3 +58,12 @@ section[id] {
 .parceliq-popup .mapboxgl-popup-tip {
   display: none !important;
 }
+
+/* Parcel scanner: horizontal scan line moving up and down */
+@keyframes parcel-scan {
+  0%, 100% { top: 0; }
+  50% { top: 100%; }
+}
+.parcel-scan-line {
+  animation: parcel-scan 4s ease-in-out infinite;
+}
