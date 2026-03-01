@@ -8,6 +8,7 @@ const navItems = [
     { id: 'hero', label: 'Home' },
     { id: 'product', label: 'The Engine' },
     { id: 'about', label: 'About' },
+    { id: 'team', label: 'Team' },
 ];
 
 function Header({ onLogoClick, onScrollToSection, onHomeClick }) {
