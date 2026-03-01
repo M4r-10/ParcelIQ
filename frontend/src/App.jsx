@@ -249,28 +249,15 @@ function App() {
                                     </span>
                                 </div>
 
-                                <div className="flex flex-1 items-center justify-center">
-                                    {/* Scanner frame: thin cyan box, leader lines, labels, map background, scan line */}
-                                    <div className="relative flex h-[200px] w-[220px] items-center justify-center">
-                                        {/* Leader lines: thin diagonals from box corners to labels */}
-                                        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 200" fill="none">
-                                            <line x1="30" y1="20" x2="8" y2="2" stroke="rgba(34,211,238,0.65)" strokeWidth="0.5" />
-                                            <line x1="30" y1="180" x2="8" y2="198" stroke="rgba(34,211,238,0.65)" strokeWidth="0.5" />
-                                            <line x1="190" y1="180" x2="212" y2="198" stroke="rgba(34,211,238,0.65)" strokeWidth="0.5" />
-                                        </svg>
-                                        {/* Labels at leader line endpoints */}
-                                        <span className="absolute left-2 top-0 font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400" style={{ transform: 'translateY(-100%)', marginTop: -4 }}>FRONT SETBACK: 20&apos;</span>
-                                        <span className="absolute left-2 bottom-0 font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400" style={{ transform: 'translateY(100%)', marginBottom: -4 }}>REAR EASEMENT: 5&apos;</span>
-                                        <span className="absolute right-2 bottom-0 font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400" style={{ transform: 'translate(100%, 100%)', marginBottom: -4, marginRight: -4 }}>LOT COVERAGE: 38%</span>
-
-                                        <div className="relative h-40 w-40 shrink-0">
-                                            {/* Thin cyan bounding box around the 3D parcel preview */}
-                                            <div className="absolute inset-0 rounded-lg border border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.25)]" />
-                                            {/* Horizontal scanning line (moves slowly up and down) */}
-                                            <div className="parcel-scan-line absolute left-0 right-0 top-0 h-px bg-cyan-400/70 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                                            {/* Map background with parcel area being scanned */}
-                                            <HeroParcelMapPreview />
-                                        </div>
+                                <div className="flex flex-1 min-h-0 w-full items-center justify-center px-2 py-2">
+                                    {/* Map + bounding box — slightly smaller so it doesn't overlap other elements */}
+                                    <div className="relative h-full max-h-[200px] min-h-[180px] w-full max-w-[280px]">
+                                        {/* Thin cyan bounding box around the parcel preview */}
+                                        <div className="absolute inset-0 rounded-lg border border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.25)]" />
+                                        {/* Horizontal scanning line (moves slowly up and down) */}
+                                        <div className="parcel-scan-line absolute left-0 right-0 top-0 h-px bg-cyan-400/70 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                        {/* Map background with parcel area being scanned */}
+                                        <HeroParcelMapPreview />
                                     </div>
                                 </div>
 
