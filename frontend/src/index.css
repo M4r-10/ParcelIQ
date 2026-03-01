@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,12 +10,7 @@ html {
 }
 
 body {
-  @apply bg-background text-text-primary font-['Inter',system-ui,sans-serif] font-light antialiased;
-}
-
-/* Display-style headings: bold, tight tracking */
-h1, h2, h3 {
-  @apply font-bold tracking-tighter;
+  @apply bg-background text-text-primary font-['Inter',system-ui,sans-serif] antialiased;
 }
 
 /* Scroll targets: leave room for fixed header so section title is visible */
