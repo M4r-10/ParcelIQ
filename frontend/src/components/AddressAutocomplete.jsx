@@ -39,15 +39,23 @@ function AddressAutocomplete({ value, onChange, onSelect, onSubmit, disabled, pl
     const debounceRef = useRef(null);
     const abortRef = useRef(null);
 
-    // Default options when no API results: synthetic suggestions from sampleAddresses
+    // Default options: only show when input is empty; when typing, optionally filter by match
     const defaultOptions = (sampleAddresses || []).map((shortName) => ({ shortName, lat: null, lng: null }));
-    const displayList = suggestions.length > 0 ? suggestions : defaultOptions;
+    const trimmedValue = (value || '').trim();
+    const showSamplesWhenEmpty = trimmedValue === '';
+    const matchingSamples = showSamplesWhenEmpty
+        ? defaultOptions
+        : defaultOptions.filter((opt) =>
+              opt.shortName.toLowerCase().includes(trimmedValue.toLowerCase())
+          );
+    const displayList =
+        suggestions.length > 0 ? suggestions : (showSamplesWhenEmpty ? defaultOptions : matchingSamples);
     const showDropdown = isOpen && displayList.length > 0;
 
     const fetchSuggestions = useCallback(async (query) => {
         if (query.length < 3) {
             setSuggestions([]);
-            setIsOpen((sampleAddresses?.length ?? 0) > 0);
+            setIsOpen(false);
             return;
         }
 
@@ -88,7 +96,7 @@ function AddressAutocomplete({ value, onChange, onSelect, onSubmit, disabled, pl
             }));
 
             setSuggestions(formatted);
-            setIsOpen(formatted.length > 0 || (sampleAddresses?.length ?? 0) > 0);
+            setIsOpen(formatted.length > 0);
             setHighlightIndex(-1);
         } catch (err) {
             if (err.name !== 'AbortError') {
@@ -105,12 +113,21 @@ function AddressAutocomplete({ value, onChange, onSelect, onSubmit, disabled, pl
     const handleInputChange = useCallback((e) => {
         const val = e.target.value;
         onChange(val);
-
+        const trimmed = val.trim();
+        if (trimmed.length > 0) {
+            const matching = (sampleAddresses || []).filter((shortName) =>
+                shortName.toLowerCase().includes(trimmed.toLowerCase())
+            );
+            setIsOpen(matching.length > 0);
+            setSuggestions([]);
+        } else {
+            setIsOpen((sampleAddresses?.length ?? 0) > 0);
+        }
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
             fetchSuggestions(val);
         }, DEBOUNCE_MS);
-    }, [onChange, fetchSuggestions]);
+    }, [onChange, fetchSuggestions, sampleAddresses]);
 
     // Select a suggestion
     const handleSelect = useCallback((suggestion) => {
@@ -187,9 +204,11 @@ function AddressAutocomplete({ value, onChange, onSelect, onSubmit, disabled, pl
                     onFocus={() => {
                         if (suggestions.length > 0) {
                             setIsOpen(true);
-                        } else if (value.trim().length >= 3) {
-                            fetchSuggestions(value.trim());
-                        } else if ((sampleAddresses?.length ?? 0) > 0) {
+                        } else if (trimmedValue.length >= 3) {
+                            fetchSuggestions(trimmedValue);
+                        } else if (trimmedValue === '' && (sampleAddresses?.length ?? 0) > 0) {
+                            setIsOpen(true);
+                        } else if (trimmedValue.length > 0 && matchingSamples.length > 0) {
                             setIsOpen(true);
                         }
                     }}

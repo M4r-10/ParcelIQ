@@ -145,7 +145,7 @@ function App() {
                     />
                 </main>
             ) : (
-                <main className="mx-auto mt-24 flex w-full max-w-full flex-col gap-24 px-6 pb-24 pt-10 lg:px-8 lg:pt-16">
+                <main className="mx-auto mt-24 flex w-full max-w-full flex-col gap-24 px-6 pb-24 pt-4 lg:px-8 lg:pt-6">
                 {/* Hero */}
                 <section id={sectionIds.hero} className="grid min-h-[calc(100vh-8rem)] gap-10 lg:grid-cols-2 lg:items-center">
                     <motion.div
@@ -330,7 +330,7 @@ function App() {
                             <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                                 The Engine
                             </h2>
-                            <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                            <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                                 Two engines. One spatially-aware underwriting stack.
                             </p>
                         </div>
@@ -517,10 +517,10 @@ function App() {
                 {/* How it works */}
                 <section id={sectionIds.process} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             How It Works
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             From address to explainable spatial risk — in four steps.
                         </p>
                     </motion.div>
@@ -583,7 +583,7 @@ function App() {
                         <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                             About
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Built for the next generation of title &amp; underwriting.
                         </p>
                     </motion.div>
@@ -647,10 +647,10 @@ function App() {
                 {/* Security */}
                 <section id={sectionIds.security} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Security &amp; Compliance
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Enterprise-grade controls from day zero.
                         </p>
                     </motion.div>
@@ -707,10 +707,10 @@ function App() {
                 {/* Insights (combined) */}
                 <section id={sectionIds.insights} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Insights
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Data-driven intelligence for every decision.
                         </p>
                     </motion.div>
@@ -812,7 +812,7 @@ function App() {
                 {/* Metrics */}
                 <section id={sectionIds.metrics} className="space-y-6">
                     <motion.div {...fadeUp}>
-                        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                        <h2 className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                             Outcomes
                         </h2>
                     </motion.div>
@@ -881,7 +881,7 @@ function App() {
                         <h2 className="text-base font-black uppercase tracking-[0.3em] text-cyan-400/90 mb-4">
                             Meet the Team
                         </h2>
-                        <p className="text-3xl font-bold tracking-tight text-white mb-8">
+                        <p className="text-base font-light tracking-tight leading-tight text-white mb-8">
                             Building the future of spatial risk intelligence.
                         </p>
                     </div>
@@ -951,7 +951,7 @@ function App() {
                     id={sectionIds.demo}
                     className="space-y-5 rounded-2xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-slate-400 font-light leading-relaxed text-xs"
                 >
-                    <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
+                    <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 mb-4">
                         Open Access
                     </div>
                     <p className="w-full text-slate-400 font-light leading-relaxed">
