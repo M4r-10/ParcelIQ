@@ -47,6 +47,8 @@ function AISummaryBox({ summaryData, isLoading }) {
         recommendations,
         closing_delay_likelihood,
         delay_reason,
+        financial_forecast,
+        mitigation_strategies,
         generated_by,
     } = summaryData;
 
@@ -57,6 +59,18 @@ function AISummaryBox({ summaryData, isLoading }) {
             'Recommendations:',
             ...(recommendations || []).map((r, i) => `${i + 1}. ${r}`),
             '',
+            ...(financial_forecast ? [
+                'Financial Forecast:',
+                `- 3-Year: ${financial_forecast.forecast_3_year}`,
+                `- 5-Year: ${financial_forecast.forecast_5_year}`,
+                `- Risk Scenario: ${financial_forecast.downside_risk_scenario}`,
+                ''
+            ] : []),
+            ...(mitigation_strategies?.length > 0 ? [
+                'Mitigation Strategies:',
+                ...mitigation_strategies.map(m => `- ${m.strategy_name}: ${m.expected_financial_impact}`),
+                ''
+            ] : []),
             `Closing Delay Likelihood: ${closing_delay_likelihood}`,
             delay_reason && `Reason: ${delay_reason}`,
             ...(summaryData.financial_impacts?.length > 0 ? [
@@ -110,6 +124,61 @@ function AISummaryBox({ summaryData, isLoading }) {
                         transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                     >
+                        {/* Financial Forecast */}
+                        {financial_forecast && financial_forecast.status !== 'paused: missing authoritative data' && (
+                            <div className="mb-4">
+                                <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-cyan-400">
+                                    Financial Forecast
+                                </div>
+                                <div className="flex flex-col gap-3 rounded-lg border border-cyan-400/10 bg-cyan-500/[0.02] p-4 text-xs text-text-secondary">
+                                    <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-3">
+                                        <div>
+                                            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-secondary/70">3-Year Projection</div>
+                                            <div className="font-semibold text-text-primary">{financial_forecast.forecast_3_year}</div>
+                                        </div>
+                                        <div>
+                                            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-secondary/70">5-Year Projection</div>
+                                            <div className="font-semibold text-text-primary">{financial_forecast.forecast_5_year}</div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="mb-1 text-[10px] uppercase tracking-wider text-rose-300/80">Downside Risk</div>
+                                        <div>{financial_forecast.downside_risk_scenario}</div>
+                                    </div>
+                                    <div>
+                                        <div className="mb-1 text-[10px] uppercase tracking-wider text-amber-300/80">Insurance Escalation</div>
+                                        <div>{financial_forecast.insurance_escalation_scenario}</div>
+                                    </div>
+                                    <div className="pt-2 text-[10px] italic text-text-secondary/50">
+                                        Basis: {financial_forecast.assumptions_and_basis} (Confidence: {financial_forecast.confidence_level})
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Mitigation Strategies */}
+                        {mitigation_strategies && mitigation_strategies.length > 0 && (
+                            <div className="mb-4">
+                                <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-400">
+                                    Mitigation Strategies
+                                </div>
+                                <ul className="flex flex-col gap-3">
+                                    {mitigation_strategies.map((ms, i) => (
+                                        <li key={i} className="flex items-start gap-3 rounded-lg border border-emerald-400/10 bg-emerald-500/[0.02] p-3 text-xs leading-relaxed text-text-secondary">
+                                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[9px] font-bold text-emerald-400">
+                                                ✓
+                                            </span>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="font-semibold text-text-primary">{ms.strategy_name}</div>
+                                                <div>{ms.description}</div>
+                                                <div className="mt-1 font-medium text-emerald-300">Impact: {ms.expected_financial_impact}</div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         {/* Recommendations */}
                         {recommendations && recommendations.length > 0 && (
                             <div className="mb-4">
